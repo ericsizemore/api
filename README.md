@@ -1,9 +1,9 @@
 Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
 =====================================================================
 
-[![Build Status](https://scrutinizer-ci.com/g/ericsizemore/api/badges/build.png?b=master)](https://scrutinizer-ci.com/g/ericsizemore/api/build-status/master)
-[![Code Coverage](https://scrutinizer-ci.com/g/ericsizemore/api/badges/coverage.png?b=master)](https://scrutinizer-ci.com/g/ericsizemore/api/?branch=master)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ericsizemore/api/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/ericsizemore/api/?branch=master)
+[![Build Status](https://scrutinizer-ci.com/g/ericsizemore/api/badges/build.png?b=main)](https://scrutinizer-ci.com/g/ericsizemore/api/build-status/main)
+[![Code Coverage](https://scrutinizer-ci.com/g/ericsizemore/api/badges/coverage.png?b=main)](https://scrutinizer-ci.com/g/ericsizemore/api/?branch=main)
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/ericsizemore/api/badges/quality-score.png?b=main)](https://scrutinizer-ci.com/g/ericsizemore/api/?branch=main)
 [![Tests](https://github.com/ericsizemore/api/actions/workflows/tests.yml/badge.svg)](https://github.com/ericsizemore/api/actions/workflows/tests.yml)
 [![PHPStan](https://github.com/ericsizemore/api/actions/workflows/main.yml/badge.svg)](https://github.com/ericsizemore/api/actions/workflows/main.yml)
 
