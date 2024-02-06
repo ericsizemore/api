@@ -3,9 +3,9 @@ name: PHPStan
 on:
   workflow_dispatch:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 # Is it overkill to run PHPStan using different PHP versions? Probably :)
 jobs:
@@ -33,7 +33,7 @@ jobs:
         run: |
           echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
