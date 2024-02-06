@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f938277bc77d8d63eb82ac49ec56cdf0",
+    "content-hash": "b8668d73306ea25b8237940a35f3aa78",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -2385,12 +2385,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/rectorphp/rector.git",
-                "reference": "428336c22c6de654b0b5fa471971ac3a56a4d8ac"
+                "reference": "64d401b6435608a6c8584341cdf18ca7754f85ae"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rectorphp/rector/zipball/428336c22c6de654b0b5fa471971ac3a56a4d8ac",
-                "reference": "428336c22c6de654b0b5fa471971ac3a56a4d8ac",
+                "url": "https://api.github.com/repos/rectorphp/rector/zipball/64d401b6435608a6c8584341cdf18ca7754f85ae",
+                "reference": "64d401b6435608a6c8584341cdf18ca7754f85ae",
                 "shasum": ""
             },
             "require": {
@@ -2434,7 +2434,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-02-05T16:07:43+00:00"
+            "time": "2024-02-06T06:23:36+00:00"
         },
         {
             "name": "sebastian/cli-parser",
