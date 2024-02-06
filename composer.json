@@ -18,7 +18,7 @@
     "support": {
         "issues": "https://github.com/ericsizemore/api/issues",
         "forum": "https://github.com/ericsizemore/api/discussions",
-        "source": "https://github.com/ericsizemore/api/tree/master",
+        "source": "https://github.com/ericsizemore/api/tree/main",
         "security": "https://github.com/ericsizemore/api/security/policy"
     },
     "require": {
@@ -48,7 +48,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "1.0-dev"
+            "dev-main": "1.0-dev"
         }
     },
     "scripts": {
