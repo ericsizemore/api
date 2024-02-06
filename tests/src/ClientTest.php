@@ -210,7 +210,7 @@ final class ClientTest extends TestCase
     {
         $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->enableRetryAttempts();
-        $client->setMaxRetryAttempts(2);
+        $client->setMaxRetryAttempts(1);
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json']]);
 
@@ -221,7 +221,43 @@ final class ClientTest extends TestCase
 
         $reflectionClass = new ReflectionClass($client::class);
         $retryCalls      = $reflectionClass->getProperty('retryCalls')->getValue($client);
-        self::assertSame(2, $retryCalls);
+        self::assertSame(1, $retryCalls);
+    }
+
+    public function testClientWithRetriesRetryAfterHeaderRateLimited(): void
+    {
+        $client = $this->buildTestClient('https://esiapi.free.beeceptor.com/', 'test', sys_get_temp_dir());
+        $client->enableRetryAttempts();
+        $client->setMaxRetryAttempts(1);
+
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'],]);
+
+        $this->expectException(RateLimitExceededException::class);
+        $response = $client->send('GET', '429');
+
+        self::assertSame(429, $response->getStatusCode());
+
+        $reflectionClass = new ReflectionClass($client::class);
+        $retryCalls      = $reflectionClass->getProperty('retryCalls')->getValue($client);
+        self::assertSame(1, $retryCalls);
+    }
+
+    public function testClientWithRetriesRetryAfterHeaderServerError(): void
+    {
+        $client = $this->buildTestClient('https://esiapi.free.beeceptor.com/', 'test', sys_get_temp_dir());
+        $client->enableRetryAttempts();
+        $client->setMaxRetryAttempts(1);
+
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'],]);
+
+        $this->expectException(ServerException::class);
+        $response = $client->send('GET', '500');
+
+        self::assertSame(500, $response->getStatusCode());
+
+        $reflectionClass = new ReflectionClass($client::class);
+        $retryCalls      = $reflectionClass->getProperty('retryCalls')->getValue($client);
+        self::assertSame(1, $retryCalls);
     }
 
     public function testEnableRetryAttempts(): void

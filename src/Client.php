@@ -36,6 +36,7 @@ namespace Esi\Api;
 use Closure;
 use Esi\Api\Exceptions\RateLimitExceededException;
 use Esi\Api\Traits\ParseJsonResponse;
+use DateTime;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
@@ -45,6 +46,7 @@ use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
+use GuzzleHttp\RetryMiddleware;
 use InvalidArgumentException;
 use Kevinrob\GuzzleCache\CacheMiddleware;
 use Kevinrob\GuzzleCache\Storage\Psr6CacheStorage;
@@ -55,14 +57,17 @@ use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
 use SensitiveParameter;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Throwable;
 
 use function array_keys;
 use function count;
 use function is_dir;
+use function is_numeric;
 use function is_writable;
 use function range;
 use function sprintf;
 use function strtoupper;
+use function time;
 use function trim;
 
 /**
@@ -410,10 +415,10 @@ final class Client
     private function retryDecider(): Closure
     {
         return function (
-            $retries,
+            int $retries,
             RequestInterface $request,
             ?ResponseInterface $response = null,
-            ?RequestException $requestException = null
+            ?Throwable $throwable = null
         ): bool {
             $this->retryCalls = $retries;
 
@@ -427,9 +432,9 @@ final class Client
              */
             return match (true) {
                 // Retry connection exceptions.
-                $requestException instanceof ConnectException => true, // @phpstan-ignore-line
+                $throwable instanceof ConnectException => true,
                 // Retry on server errors.
-                $response instanceof ResponseInterface && $response->getStatusCode() >= 500 => true,
+                $response instanceof ResponseInterface => ($response->getStatusCode() >= 500 || $response->getStatusCode() === 429),
                 // Do not retry.
                 default => false
             };
@@ -441,6 +446,20 @@ final class Client
      */
     private function retryDelay(): Closure
     {
-        return static fn (int $numberOfRetries): int => 1000 * $numberOfRetries;
+        return static function (int $numberOfRetries, ResponseInterface $response): int {
+            if (!$response->hasHeader('Retry-After')) {
+                return RetryMiddleware::exponentialDelay($numberOfRetries);
+            }
+
+            $retryAfter = $response->getHeaderLine('Retry-After');
+
+            // @codeCoverageIgnoreStart
+            if (!is_numeric($retryAfter)) {
+                $retryAfter = (new DateTime($retryAfter))->getTimestamp() - time();
+            }
+
+            // @codeCoverageIgnoreEnd
+            return 1000 * (int) $retryAfter;
+        };
     }
 }
