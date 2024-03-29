@@ -6,7 +6,9 @@ declare(strict_types=1);
  * Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
  *
  * @author    Eric Sizemore <admin@secondversion.com>
+ *
  * @version   1.0.0
+ *
  * @copyright (C) 2024 Eric Sizemore
  * @license   The MIT License (MIT)
  *
@@ -36,8 +38,8 @@ namespace Esi\Api;
 use InvalidArgumentException;
 
 use function array_filter;
-use function in_array;
 use function implode;
+use function in_array;
 use function ltrim;
 use function sprintf;
 use function str_ends_with;
@@ -59,8 +61,6 @@ class Utils
         return $endpoint;
     }
 
-    /**
-     */
     public static function verifyMethod(string $method): void
     {
         static $availableMethods;
@@ -79,7 +79,7 @@ class Utils
     /**
      * Performs a very bare-bones 'verification' of Guzzle options.
      *
-     * @param   array<string, mixed>  $options
+     * @param array<string, mixed> $options
      */
     public static function verifyOptions(array $options): void
     {

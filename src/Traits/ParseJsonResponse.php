@@ -6,7 +6,9 @@ declare(strict_types=1);
  * Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
  *
  * @author    Eric Sizemore <admin@secondversion.com>
+ *
  * @version   1.0.0
+ *
  * @copyright (C) 2024 Eric Sizemore
  * @license   The MIT License (MIT)
  *
@@ -63,13 +65,14 @@ trait ParseJsonResponse
      * Decodes the jSON returned from the API. Returns as an associative array.
      *
      * @param ResponseInterface $response The response object.
+     *
      * @return array<mixed>
      *
      * @throws JsonException
      */
     public function toArray(ResponseInterface $response): array
     {
-        /** @var array<mixed> $json **/
+        /** @var array<mixed> $json * */
         $json = json_decode($this->raw($response), true, flags: JSON_THROW_ON_ERROR);
 
         return $json;
@@ -84,7 +87,7 @@ trait ParseJsonResponse
      */
     public function toObject(ResponseInterface $response): stdClass
     {
-        /** @var stdClass $json **/
+        /** @var stdClass $json * */
         $json = json_decode($this->raw($response), false, flags: JSON_THROW_ON_ERROR);
 
         return $json;

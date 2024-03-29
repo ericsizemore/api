@@ -6,7 +6,9 @@ declare(strict_types=1);
  * Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
  *
  * @author    Eric Sizemore <admin@secondversion.com>
+ *
  * @version   1.0.0
+ *
  * @copyright (C) 2024 Eric Sizemore
  * @license   The MIT License (MIT)
  *
@@ -34,8 +36,8 @@ declare(strict_types=1);
 namespace Esi\Api\Tests;
 
 use Esi\Api\Client;
-use Esi\Api\Utils;
 use Esi\Api\Exceptions\RateLimitExceededException;
+use Esi\Api\Utils;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Psr7\Response;
@@ -49,11 +51,10 @@ use Symfony\Component\Filesystem\Path;
 
 use function is_dir;
 use function json_decode;
+use function serialize;
 use function sys_get_temp_dir;
 
 use const DIRECTORY_SEPARATOR;
-
-use function serialize;
 
 /**
  * Client Tests.
@@ -62,6 +63,8 @@ use function serialize;
  *
  * @todo I do not like testing against a live service. Though, in this case, it uses https://httpbin.org instead of
  *       an actual live API. Would likely be best to just do everything through Mocks.
+ *
+ * @internal
  */
 #[CoversClass(Client::class)]
 #[CoversClass(Utils::class)]
@@ -125,13 +128,13 @@ final class ClientTest extends TestCase
                 'Client-ID'     => 'apiKey',
                 'Authorization' => 'someAccessToken',
 
-        ]]);
+            ]]);
 
         $response = $client->send('GET', '/anything');
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, array{}|string|null> $data **/
+        /** @var array<string, array{}|string|null> $data * */
         $data = json_decode($response->getBody()->getContents(), true);
         self::assertNotEmpty($data);
 
@@ -154,13 +157,13 @@ final class ClientTest extends TestCase
                 'Client-ID'     => 'apiKey',
                 'Authorization' => 'someAccessToken',
 
-        ]]);
+            ]]);
 
         $response = $client->send('GET', '/anything', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, array{}|string|null> $data **/
+        /** @var array<string, array{}|string|null> $data * */
         $data = json_decode($response->getBody()->getContents(), true);
         self::assertNotEmpty($data);
 
@@ -183,13 +186,13 @@ final class ClientTest extends TestCase
                 'Client-ID'     => 'anotherApiKey',
                 'Authorization' => 'someOtherAccessToken',
 
-        ]]);
+            ]]);
 
         $response = $client->send('GET', '/anything', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, array{}|string|null> $data **/
+        /** @var array<string, array{}|string|null> $data * */
         $data = json_decode($response->getBody()->getContents(), true);
         self::assertNotEmpty($data);
 

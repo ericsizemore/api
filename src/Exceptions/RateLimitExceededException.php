@@ -6,7 +6,9 @@ declare(strict_types=1);
  * Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
  *
  * @author    Eric Sizemore <admin@secondversion.com>
+ *
  * @version   1.0.0
+ *
  * @copyright (C) 2024 Eric Sizemore
  * @license   The MIT License (MIT)
  *
@@ -36,7 +38,7 @@ namespace Esi\Api\Exceptions;
 use InvalidArgumentException;
 
 /**
- * RateLimitExceededException
+ * RateLimitExceededException.
  */
 final class RateLimitExceededException extends InvalidArgumentException
 {

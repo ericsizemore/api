@@ -6,7 +6,9 @@ declare(strict_types=1);
  * Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
  *
  * @author    Eric Sizemore <admin@secondversion.com>
+ *
  * @version   1.0.0
+ *
  * @copyright (C) 2024 Eric Sizemore
  * @license   The MIT License (MIT)
  *
@@ -34,16 +36,16 @@ declare(strict_types=1);
 namespace Esi\Api;
 
 use Closure;
+use DateTime;
 use Esi\Api\Exceptions\RateLimitExceededException;
 use Esi\Api\Traits\ParseJsonResponse;
-use DateTime;
+use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\InvalidArgumentException as GuzzleInvalidArgumentException;
 use GuzzleHttp\Exception\RequestException;
-use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\RetryMiddleware;
@@ -76,6 +78,7 @@ use function trim;
  * Note: Only designed for non-asynchronous, non-pool, and non-promise requests currently.
  *
  * @todo Allow more cache options. Currently the only option is via files using Symfony's FilesystemAdapter.
+ *
  * @see \Esi\Api\Tests\ClientTest
  */
 final class Client
@@ -99,7 +102,7 @@ final class Client
 
     /**
      * If $this->apiRequiresQuery = true, then what is the name of the
-     * query parameter for the API key? For example: api_key
+     * query parameter for the API key? For example: api_key.
      */
     private readonly string $apiParamName;
 
@@ -109,7 +112,7 @@ final class Client
     private ?string $cachePath = null;
 
     /**
-     * GuzzleHttp Client
+     * GuzzleHttp Client.
      */
     public ?GuzzleClient $client = null;
 
@@ -137,11 +140,11 @@ final class Client
     /**
      * Constructor.
      *
-     * @param string   $apiUrl            URL to the API.
-     * @param ?string  $apiKey            Your API Key.
-     * @param ?string  $cachePath         The path to your cache on the filesystem.
-     * @param bool     $apiRequiresQuery  True if the API requires the api key sent via query/query string, false otherwise.
-     * @param string   $apiParamName      If $apiRequiresQuery = true, then the param name for the api key. E.g.: api_key
+     * @param string  $apiUrl           URL to the API.
+     * @param ?string $apiKey           Your API Key.
+     * @param ?string $cachePath        The path to your cache on the filesystem.
+     * @param bool    $apiRequiresQuery True if the API requires the api key sent via query/query string, false otherwise.
+     * @param string  $apiParamName     If $apiRequiresQuery = true, then the param name for the api key. E.g.: api_key
      *
      * @throws InvalidArgumentException If either the api key or api url are empty strings.
      */
@@ -182,20 +185,19 @@ final class Client
     /**
      * Builds the client and sends the request, all in one: basically just combines {@see self::build()} and {@see self::send()}.
      *
-     * @param  string              $method   The method to use, such as GET.
-     * @param  ?string             $endpoint Endpoint to call on the API.
+     * @param string               $method   The method to use, such as GET.
+     * @param ?string              $endpoint Endpoint to call on the API.
      * @param array<string, mixed> $options  An associative array with options to set in the initial config of the Guzzle
      *                                       client. {@see https://docs.guzzlephp.org/en/stable/request-options.html}
      *                                       One exception to this is the use of non-Guzzle, Esi\Api specific options:
-     *                                          persistentHeaders - Key => Value array where key is the header name and value is the header value.
+     *                                       persistentHeaders - Key => Value array where key is the header name and value is the header value.
      *                                       Also of note, right now this class is built in such a way that adding 'query' to the build options
      *                                       should be avoided, and instead sent with the {@see self::send()} method when making a request. If a
      *                                       'query' key is found in the $options array, it will raise an InvalidArgumentException.
      *
-     * @throws GuzzleInvalidArgumentException If Guzzle encounters an error with passed options
-     * @throws InvalidArgumentException       If 'query' is passed in options. Should only be done on the send() call.
-     *                                        Or if an invalid headers array is passed in options.
-     *
+     * @throws GuzzleInvalidArgumentException                           If Guzzle encounters an error with passed options
+     * @throws InvalidArgumentException                                 If 'query' is passed in options. Should only be done on the send() call.
+     *                                                                  Or if an invalid headers array is passed in options.
      * @throws RuntimeException
      * @throws ClientException | GuzzleException | BadResponseException
      */
@@ -238,7 +240,7 @@ final class Client
      * @param array<string, mixed> $options An associative array with options to set in the initial config of the Guzzle
      *                                      client. {@see https://docs.guzzlephp.org/en/stable/request-options.html}
      *                                      One exception to this is the use of non-Guzzle, Esi\Api specific options:
-     *                                         persistentHeaders - Key => Value array where key is the header name and value is the header value.
+     *                                      persistentHeaders - Key => Value array where key is the header name and value is the header value.
      *                                      Also of note, right now this class is built in such a way that adding 'query' to the build options
      *                                      should be avoided, and instead sent with the {@see self::send()} method when making a request. If a
      *                                      'query' key is found in the $options array, it will raise an InvalidArgumentException.
@@ -263,7 +265,7 @@ final class Client
         if ($options !== null) {
             // Do we need to add any persistent headers (headers sent with every request)?
             if (isset($options['persistentHeaders'])) {
-                /** @var array<string> $headers **/
+                /** @var array<string> $headers * */
                 $headers = $options['persistentHeaders'];
 
                 if (array_keys($headers) === range(0, count($headers) - 1)) {
@@ -348,11 +350,13 @@ final class Client
     /**
      * Performs a synchronous request with given method and API endpoint.
      *
-     * @param  string                 $method    The method to use, such as GET.
-     * @param  ?string                $endpoint  Endpoint to call on the API.
-     * @param  ?array<string, mixed>  $options   An associative array with options to set per request.
-     *                                           {@see https://docs.guzzlephp.org/en/stable/request-options.html}
-     * @return ResponseInterface                 An object implementing PSR's ResponseInterface object.
+     * @param string                $method   The method to use, such as GET.
+     * @param ?string               $endpoint Endpoint to call on the API.
+     * @param ?array<string, mixed> $options  An associative array with options to set per request.
+     *
+     *                                           @see https://docs.guzzlephp.org/en/stable/request-options.html
+     *
+     * @return ResponseInterface An object implementing PSR's ResponseInterface object.
      *
      * @throws InvalidArgumentException
      * @throws RuntimeException
@@ -368,7 +372,7 @@ final class Client
         /**
          * If passing options, verify against the request options Guzzle expects.
          * {@see https://docs.guzzlephp.org/en/stable/request-options.html}
-         * {@see Utils::verifyOptions()}
+         * {@see Utils::verifyOptions()}.
          */
         if ($options !== null) {
             Utils::verifyOptions($options);
