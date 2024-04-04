@@ -28,6 +28,7 @@
         "symfony/cache": "^7.0"
     },
     "require-dev": {
+        "esi/phpunit-coverage-check": "^1.0",
         "friendsofphp/php-cs-fixer": "dev-master",
         "phpstan/phpstan": "^1.11",
         "phpstan/phpstan-phpunit": "^1.4",
@@ -52,6 +53,7 @@
         }
     },
     "scripts": {
+        "coverage-check": "vendor/bin/coverage-check coverage:check build/logs/clover.xml 100 --ansi",
         "phpcs-fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
         "phpcs-nofix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff",
         "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon",
