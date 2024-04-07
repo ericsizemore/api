@@ -3,34 +3,13 @@
 declare(strict_types=1);
 
 /**
- * Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
+ * This file is part of Esi\Api.
  *
- * @author    Eric Sizemore <admin@secondversion.com>
+ * (c) Eric Sizemore <admin@secondversion.com>
  *
- * @version   1.0.0
- *
- * @copyright (C) 2024 Eric Sizemore
- * @license   The MIT License (MIT)
- *
- * Copyright (C) 2024 Eric Sizemore <https://www.secondversion.com/>.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to
- * deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
- * sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * This source file is subject to the MIT license. For the full
+ * copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Esi\Api;
@@ -45,7 +24,6 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\InvalidArgumentException as GuzzleInvalidArgumentException;
-use GuzzleHttp\Exception\RequestException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\RetryMiddleware;
@@ -62,7 +40,6 @@ use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Throwable;
 
 use function array_keys;
-use function count;
 use function is_dir;
 use function is_numeric;
 use function is_writable;
@@ -79,7 +56,7 @@ use function trim;
  *
  * @todo Allow more cache options. Currently the only option is via files using Symfony's FilesystemAdapter.
  *
- * @see \Esi\Api\Tests\ClientTest
+ * @see Tests\ClientTest
  */
 final class Client
 {
@@ -91,14 +68,14 @@ final class Client
     use ParseJsonResponse;
 
     /**
+     * GuzzleHttp Client.
+     */
+    public ?GuzzleClient $client = null;
+
+    /**
      * API key.
      */
     private readonly string $apiKey;
-
-    /**
-     * Base API endpoint.
-     */
-    private readonly string $apiUrl;
 
     /**
      * If $this->apiRequiresQuery = true, then what is the name of the
@@ -107,14 +84,9 @@ final class Client
     private readonly string $apiParamName;
 
     /**
-     * Path to your cache folder on the file system.
+     * Base API endpoint.
      */
-    private ?string $cachePath = null;
-
-    /**
-     * GuzzleHttp Client.
-     */
-    public ?GuzzleClient $client = null;
+    private readonly string $apiUrl;
 
     /**
      * Will add the Guzzle Retry middleware to requests if enabled.
@@ -123,6 +95,11 @@ final class Client
      * @see self::disableRetryAttempts()
      */
     private bool $attemptRetry = false;
+
+    /**
+     * Path to your cache folder on the file system.
+     */
+    private ?string $cachePath = null;
 
     /**
      * Maximum number of retries that the Retry middleware will attempt.
@@ -183,39 +160,6 @@ final class Client
     }
 
     /**
-     * Builds the client and sends the request, all in one: basically just combines {@see self::build()} and {@see self::send()}.
-     *
-     * @param string               $method   The method to use, such as GET.
-     * @param ?string              $endpoint Endpoint to call on the API.
-     * @param array<string, mixed> $options  An associative array with options to set in the initial config of the Guzzle
-     *                                       client. {@see https://docs.guzzlephp.org/en/stable/request-options.html}
-     *                                       One exception to this is the use of non-Guzzle, Esi\Api specific options:
-     *                                       persistentHeaders - Key => Value array where key is the header name and value is the header value.
-     *                                       Also of note, right now this class is built in such a way that adding 'query' to the build options
-     *                                       should be avoided, and instead sent with the {@see self::send()} method when making a request. If a
-     *                                       'query' key is found in the $options array, it will raise an InvalidArgumentException.
-     *
-     * @throws GuzzleInvalidArgumentException                           If Guzzle encounters an error with passed options
-     * @throws InvalidArgumentException                                 If 'query' is passed in options. Should only be done on the send() call.
-     *                                                                  Or if an invalid headers array is passed in options.
-     * @throws RuntimeException
-     * @throws ClientException | GuzzleException | BadResponseException
-     */
-    public function buildAndSend(string $method, ?string $endpoint = null, ?array $options = null): ResponseInterface
-    {
-        $query = $options['query'] ?? [];
-        unset($options['query']);
-
-        $this->build($options);
-
-        if ($query !== []) {
-            $options['query'] = $query;
-        }
-
-        return $this->send($method, $endpoint, $options);
-    }
-
-    /**
      * Builds our GuzzleHttp client.
      *
      * Some APIs require requests be made with the api key via query string; others, by setting a header. If the particular API you are querying
@@ -268,7 +212,7 @@ final class Client
                 /** @var array<string> $headers * */
                 $headers = $options['persistentHeaders'];
 
-                if (array_keys($headers) === range(0, count($headers) - 1)) {
+                if (array_keys($headers) === range(0, \count($headers) - 1)) {
                     throw new InvalidArgumentException('The headers array must have header name as keys.');
                 }
 
@@ -318,13 +262,36 @@ final class Client
     }
 
     /**
-     * Enable the Retry middleware.
+     * Builds the client and sends the request, all in one: basically just combines {@see self::build()} and {@see self::send()}.
+     *
+     * @param string               $method   The method to use, such as GET.
+     * @param ?string              $endpoint Endpoint to call on the API.
+     * @param array<string, mixed> $options  An associative array with options to set in the initial config of the Guzzle
+     *                                       client. {@see https://docs.guzzlephp.org/en/stable/request-options.html}
+     *                                       One exception to this is the use of non-Guzzle, Esi\Api specific options:
+     *                                       persistentHeaders - Key => Value array where key is the header name and value is the header value.
+     *                                       Also of note, right now this class is built in such a way that adding 'query' to the build options
+     *                                       should be avoided, and instead sent with the {@see self::send()} method when making a request. If a
+     *                                       'query' key is found in the $options array, it will raise an InvalidArgumentException.
+     *
+     * @throws GuzzleInvalidArgumentException If Guzzle encounters an error with passed options
+     * @throws InvalidArgumentException       If 'query' is passed in options. Should only be done on the send() call.
+     *                                        Or if an invalid headers array is passed in options.
+     * @throws RuntimeException
+     * @throws ClientException | GuzzleException | BadResponseException
      */
-    public function enableRetryAttempts(): Client
+    public function buildAndSend(string $method, ?string $endpoint = null, ?array $options = null): ResponseInterface
     {
-        $this->attemptRetry = true;
+        $query = $options['query'] ?? [];
+        unset($options['query']);
 
-        return $this;
+        $this->build($options);
+
+        if ($query !== []) {
+            $options['query'] = $query;
+        }
+
+        return $this->send($method, $endpoint, $options);
     }
 
     /**
@@ -338,11 +305,11 @@ final class Client
     }
 
     /**
-     * Set the maximum number of retry attempts.
+     * Enable the Retry middleware.
      */
-    public function setMaxRetryAttempts(int $maxRetries): Client
+    public function enableRetryAttempts(): Client
     {
-        $this->maxRetries = $maxRetries;
+        $this->attemptRetry = true;
 
         return $this;
     }
@@ -354,7 +321,7 @@ final class Client
      * @param ?string               $endpoint Endpoint to call on the API.
      * @param ?array<string, mixed> $options  An associative array with options to set per request.
      *
-     *                                           @see https://docs.guzzlephp.org/en/stable/request-options.html
+     * @see https://docs.guzzlephp.org/en/stable/request-options.html
      *
      * @return ResponseInterface An object implementing PSR's ResponseInterface object.
      *
@@ -409,6 +376,16 @@ final class Client
 
             throw $clientException;
         }
+    }
+
+    /**
+     * Set the maximum number of retry attempts.
+     */
+    public function setMaxRetryAttempts(int $maxRetries): Client
+    {
+        $this->maxRetries = $maxRetries;
+
+        return $this;
     }
 
     /**

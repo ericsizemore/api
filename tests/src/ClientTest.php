@@ -3,34 +3,13 @@
 declare(strict_types=1);
 
 /**
- * Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
+ * This file is part of Esi\Api.
  *
- * @author    Eric Sizemore <admin@secondversion.com>
+ * (c) Eric Sizemore <admin@secondversion.com>
  *
- * @version   1.0.0
- *
- * @copyright (C) 2024 Eric Sizemore
- * @license   The MIT License (MIT)
- *
- * Copyright (C) 2024 Eric Sizemore <https://www.secondversion.com/>.
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to
- * deal in the Software without restriction, including without limitation the
- * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
- * sell copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ * This source file is subject to the MIT license. For the full
+ * copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
  */
 
 namespace Esi\Api\Tests;
@@ -75,7 +54,7 @@ final class ClientTest extends TestCase
     #[\Override]
     public static function setUpBeforeClass(): void
     {
-        $filesystem = new FileSystem();
+        $filesystem = new Filesystem();
 
         self::$cacheDir = Path::normalize(__DIR__ . DIRECTORY_SEPARATOR . 'tmpCache');
 
@@ -87,26 +66,52 @@ final class ClientTest extends TestCase
     #[\Override]
     public static function tearDownAfterClass(): void
     {
-        $filesystem = new FileSystem();
+        $filesystem = new Filesystem();
 
         $filesystem->remove(self::$cacheDir);
 
         self::$cacheDir = '';
     }
 
-    private function buildTestClient(string | bool | null ...$params): Client
+    public function testClientApiKeyEmptyString(): void
     {
-        static $called;
-
-        // @phpstan-ignore-next-line
-        return $called[serialize($params)] ??= new Client(...$params);
+        $this->expectException(InvalidArgumentException::class);
+        $this->buildTestClient('https://httpbin.org', '', sys_get_temp_dir());
     }
 
-    public function testClientWithApiQuery(): void
+    public function testClientApiKeyNull(): void
     {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $this->expectException(InvalidArgumentException::class);
+        $this->buildTestClient('https://httpbin.org', null, sys_get_temp_dir());
+    }
 
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json']]);
+    public function testClientApiUrlEmptyString(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->buildTestClient('', 'test', sys_get_temp_dir());
+    }
+
+    public function testClientBuildAndSend(): void
+    {
+        $client   = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
+        $response = $client->buildAndSend('GET', '/get', [
+            'persistentHeaders' => ['Accept' => 'application/json'],
+            'timeout'           => '5.0',
+            'query'             => ['foo' => 'bar'],
+        ]);
+
+        self::assertSame(200, $response->getStatusCode());
+
+        $data = json_decode($response->getBody()->getContents(), true);
+        self::assertNotEmpty($data);
+        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
+        self::assertSame(['foo' => 'bar'], $data['args']);
+    }
+
+    public function testClientBuildExtraOptions(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
 
         $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
 
@@ -115,7 +120,75 @@ final class ClientTest extends TestCase
         $data = json_decode($response->getBody()->getContents(), true);
         self::assertNotEmpty($data);
         self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
-        self::assertSame(['api_key' => 'test', 'foo' => 'bar'], $data['args']);
+        self::assertSame(['foo' => 'bar'], $data['args']);
+    }
+
+    public function testClientBuildNoOptionsNoQueryWithApi(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client->build();
+
+        $response = $client->send('GET', '/get');
+
+        self::assertSame(200, $response->getStatusCode());
+
+        $data = json_decode($response->getBody()->getContents(), true);
+        self::assertNotEmpty($data);
+        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
+    }
+
+    public function testClientBuildNoOptionsNoQueryWithoutApi(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
+        $client->build();
+
+        $response = $client->send('GET', '/get');
+
+        self::assertSame(200, $response->getStatusCode());
+
+        $data = json_decode($response->getBody()->getContents(), true);
+        self::assertNotEmpty($data);
+        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
+        self::assertEmpty($data['args']);
+    }
+
+    public function testClientBuildWithInvalidOption(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
+        $this->expectException(InvalidArgumentException::class);
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timut' => '5.0']);
+    }
+
+    public function testClientError(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
+
+        $this->expectException(ClientException::class);
+        $client->send('GET', '/status/404');
+    }
+
+    public function testClientPersistentHeadersInvalid(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
+        $this->expectException(InvalidArgumentException::class);
+        $client->build(['persistentHeaders' => ['Accept', 'application/json']]);
+    }
+
+    public function testClientSendInvalidMethod(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
+
+        $this->expectException(InvalidArgumentException::class);
+        $client->send('INVALID', '/get', ['query' => ['foo' => 'bar']]);
+    }
+
+    public function testClientSendWithoutBuildFirst(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'testnobuild', sys_get_temp_dir());
+        $this->expectException(RuntimeException::class);
+        $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
     }
 
     public function testClientWithApiParamsAsHeaderNoQuery(): void
@@ -209,6 +282,51 @@ final class ClientTest extends TestCase
         self::assertSame(['foo' => 'bar'], $data['args']);
     }
 
+    public function testClientWithApiQuery(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
+
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json']]);
+
+        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
+
+        self::assertSame(200, $response->getStatusCode());
+
+        $data = json_decode($response->getBody()->getContents(), true);
+        self::assertNotEmpty($data);
+        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
+        self::assertSame(['api_key' => 'test', 'foo' => 'bar'], $data['args']);
+    }
+
+    public function testClientWithExtraQueryHeaders(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client->build([
+            'persistentHeaders' => ['Accept' => 'application/json'],
+        ]);
+        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
+
+        self::assertSame(200, $response->getStatusCode());
+
+        $data = json_decode($response->getBody()->getContents(), true);
+        self::assertNotEmpty($data);
+        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
+        self::assertSame(['api_key' => 'test', 'foo' => 'bar'], $data['args']);
+    }
+
+    public function testClientWithQueryInBuildOptions(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
+
+        $this->expectException(InvalidArgumentException::class);
+        $client->build([
+            'apiParamName'      => 'api_key',
+            'apiRequiresQuery'  => true,
+            'persistentHeaders' => ['Accept' => 'application/json'],
+            'query'             => ['foo' => 'bar'],
+        ]);
+    }
+
     public function testClientWithRetries(): void
     {
         $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
@@ -263,16 +381,6 @@ final class ClientTest extends TestCase
         self::assertSame(1, $retryCalls);
     }
 
-    public function testEnableRetryAttempts(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
-        $client->enableRetryAttempts();
-
-        $reflectionClass = new ReflectionClass($client::class);
-        $attemptRetry    = $reflectionClass->getProperty('attemptRetry')->getValue($client);
-        self::assertTrue($attemptRetry);
-    }
-
     public function testDisableRetryAttempts(): void
     {
         $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
@@ -283,170 +391,14 @@ final class ClientTest extends TestCase
         self::assertFalse($attemptRetry);
     }
 
-    public function testSetMaxRetryAttempts(): void
+    public function testEnableRetryAttempts(): void
     {
         $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
-        $client->setMaxRetryAttempts(10);
+        $client->enableRetryAttempts();
 
         $reflectionClass = new ReflectionClass($client::class);
-        $maxRetries      = $reflectionClass->getProperty('maxRetries')->getValue($client);
-        self::assertSame(10, $maxRetries);
-    }
-
-    public function testClientApiUrlEmptyString(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->buildTestClient('', 'test', sys_get_temp_dir());
-    }
-
-    public function testClientApiKeyEmptyString(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->buildTestClient('https://httpbin.org', '', sys_get_temp_dir());
-    }
-
-    public function testClientApiKeyNull(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-        $this->buildTestClient('https://httpbin.org', null, sys_get_temp_dir());
-    }
-
-    public function testClientPersistentHeadersInvalid(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
-        $this->expectException(InvalidArgumentException::class);
-        $client->build(['persistentHeaders' => ['Accept', 'application/json']]);
-    }
-
-    public function testClientBuildExtraOptions(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
-
-        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
-
-        self::assertSame(200, $response->getStatusCode());
-
-        $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
-        self::assertSame(['foo' => 'bar'], $data['args']);
-    }
-
-    public function testClientBuildAndSend(): void
-    {
-        $client   = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
-        $response = $client->buildAndSend('GET', '/get', [
-            'persistentHeaders' => ['Accept' => 'application/json'],
-            'timeout'           => '5.0',
-            'query'             => ['foo' => 'bar'],
-        ]);
-
-        self::assertSame(200, $response->getStatusCode());
-
-        $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
-        self::assertSame(['foo' => 'bar'], $data['args']);
-    }
-
-    public function testClientBuildNoOptionsNoQueryWithApi(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
-        $client->build();
-
-        $response = $client->send('GET', '/get');
-
-        self::assertSame(200, $response->getStatusCode());
-
-        $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
-    }
-
-    public function testClientBuildNoOptionsNoQueryWithoutApi(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
-        $client->build();
-
-        $response = $client->send('GET', '/get');
-
-        self::assertSame(200, $response->getStatusCode());
-
-        $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
-        self::assertEmpty($data['args']);
-    }
-
-    public function testClientSendInvalidMethod(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
-
-        $this->expectException(InvalidArgumentException::class);
-        $client->send('INVALID', '/get', ['query' => ['foo' => 'bar']]);
-    }
-
-    public function testClientSendWithoutBuildFirst(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'testnobuild', sys_get_temp_dir());
-        $this->expectException(RuntimeException::class);
-        $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
-    }
-
-    public function testRateLimitExceeded(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
-
-        $this->expectException(RateLimitExceededException::class);
-        $client->send('GET', '/status/429');
-    }
-
-    public function testClientError(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
-
-        $this->expectException(ClientException::class);
-        $client->send('GET', '/status/404');
-    }
-
-    public function testClientBuildWithInvalidOption(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
-        $this->expectException(InvalidArgumentException::class);
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timut' => '5.0']);
-    }
-
-    public function testClientWithExtraQueryHeaders(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
-        $client->build([
-            'persistentHeaders' => ['Accept' => 'application/json'],
-        ]);
-        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
-
-        self::assertSame(200, $response->getStatusCode());
-
-        $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
-        self::assertSame(['api_key' => 'test', 'foo' => 'bar'], $data['args']);
-    }
-
-    public function testClientWithQueryInBuildOptions(): void
-    {
-        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
-
-        $this->expectException(InvalidArgumentException::class);
-        $client->build([
-            'apiParamName'      => 'api_key',
-            'apiRequiresQuery'  => true,
-            'persistentHeaders' => ['Accept' => 'application/json'],
-            'query'             => ['foo' => 'bar'],
-        ]);
+        $attemptRetry    = $reflectionClass->getProperty('attemptRetry')->getValue($client);
+        self::assertTrue($attemptRetry);
     }
 
     public function testParseWithJsonTraitRaw(): void
@@ -496,5 +448,32 @@ final class ClientTest extends TestCase
         self::assertObjectHasProperty('headers', $object);
         self::assertObjectHasProperty('origin', $object);
         self::assertObjectHasProperty('url', $object);
+    }
+
+    public function testRateLimitExceeded(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir());
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
+
+        $this->expectException(RateLimitExceededException::class);
+        $client->send('GET', '/status/429');
+    }
+
+    public function testSetMaxRetryAttempts(): void
+    {
+        $client = $this->buildTestClient('https://httpbin.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client->setMaxRetryAttempts(10);
+
+        $reflectionClass = new ReflectionClass($client::class);
+        $maxRetries      = $reflectionClass->getProperty('maxRetries')->getValue($client);
+        self::assertSame(10, $maxRetries);
+    }
+
+    private function buildTestClient(string | bool | null ...$params): Client
+    {
+        static $called;
+
+        // @phpstan-ignore-next-line
+        return $called[serialize($params)] ??= new Client(...$params);
     }
 }
