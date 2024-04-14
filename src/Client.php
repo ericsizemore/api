@@ -274,9 +274,9 @@ final class Client
      *                                       should be avoided, and instead sent with the {@see self::send()} method when making a request. If a
      *                                       'query' key is found in the $options array, it will raise an InvalidArgumentException.
      *
-     * @throws GuzzleInvalidArgumentException If Guzzle encounters an error with passed options
-     * @throws InvalidArgumentException       If 'query' is passed in options. Should only be done on the send() call.
-     *                                        Or if an invalid headers array is passed in options.
+     * @throws GuzzleInvalidArgumentException                           If Guzzle encounters an error with passed options
+     * @throws InvalidArgumentException                                 If 'query' is passed in options. Should only be done on the send() call.
+     *                                                                  Or if an invalid headers array is passed in options.
      * @throws RuntimeException
      * @throws ClientException | GuzzleException | BadResponseException
      */

@@ -6,7 +6,9 @@
     "keywords": [
         "api",
         "api-client",
-        "api-wrapper"
+        "api-wrapper",
+        "guzzle",
+        "guzzlehttp"
     ],
     "authors": [
         {
@@ -21,6 +23,20 @@
         "source": "https://github.com/ericsizemore/api/tree/main",
         "security": "https://github.com/ericsizemore/api/security/policy"
     },
+    "funding": [
+        {
+            "type": "custom",
+            "url": "https://ko-fi.com/ericsizemore"
+        },
+        {
+            "type": "github",
+            "url": "https://github.com/ericsizemore"
+        },
+        {
+            "type": "tidelift",
+            "url": "https://tidelift.com/funding/github/packagist/esi/api"
+        }
+    ],
     "require": {
         "php": "^8.2 <8.5",
         "guzzlehttp/guzzle": "^7.0 <8.0",
@@ -29,7 +45,7 @@
     },
     "require-dev": {
         "esi/phpunit-coverage-check": "^1.0",
-        "friendsofphp/php-cs-fixer": "dev-master",
+        "friendsofphp/php-cs-fixer": "^3.53",
         "phpstan/phpstan": "^1.11",
         "phpstan/phpstan-phpunit": "^1.4",
         "phpstan/phpstan-strict-rules": "^1.6",
