@@ -43,7 +43,7 @@ class Utils
     {
         static $availableMethods;
 
-        $availableMethods ??= ['HEAD', 'GET', 'DELETE', 'OPTIONS', 'PATCH', 'POST', 'PUT',];
+        $availableMethods ??= ['HEAD', 'GET', 'DELETE', 'OPTIONS', 'PATCH', 'POST', 'PUT', ];
 
         // Check for a valid method
         if (!\in_array($method, $availableMethods, true)) {

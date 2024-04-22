@@ -44,9 +44,9 @@ trait ParseJsonResponse
      *
      * @param ResponseInterface $response The response object.
      *
-     * @return array<mixed>
-     *
      * @throws JsonException
+     *
+     * @return array<mixed>
      */
     public function toArray(ResponseInterface $response): array
     {

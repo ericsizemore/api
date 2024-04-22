@@ -39,17 +39,17 @@
     ],
     "require": {
         "php": "^8.2 <8.5",
-        "guzzlehttp/guzzle": "^7.0 <8.0",
-        "kevinrob/guzzle-cache-middleware": "^5.1 <6.0",
+        "guzzlehttp/guzzle": "^7.0",
+        "kevinrob/guzzle-cache-middleware": "^5.1",
         "symfony/cache": "^7.0"
     },
     "require-dev": {
-        "esi/phpunit-coverage-check": "^1.0",
-        "friendsofphp/php-cs-fixer": "^3.53",
+        "esi/phpunit-coverage-check": "^2.0",
+        "friendsofphp/php-cs-fixer": "^3.54",
         "phpstan/phpstan": "^1.11",
         "phpstan/phpstan-phpunit": "^1.4",
         "phpstan/phpstan-strict-rules": "^1.6",
-        "phpunit/phpunit": "^11.0"
+        "phpunit/phpunit": "^11.1"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -69,7 +69,7 @@
         }
     },
     "scripts": {
-        "coverage-check": "vendor/bin/coverage-check coverage:check build/logs/clover.xml 100 --ansi",
+        "coverage-check": "vendor/bin/coverage-check build/logs/clover.xml 100",
         "phpcs-fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
         "phpcs-nofix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff",
         "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon",

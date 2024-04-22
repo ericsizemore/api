@@ -251,7 +251,7 @@ final class Client
             $handlerStack->push(Middleware::retry($this->retryDecider(), $this->retryDelay()));
         }
 
-        $defaultOptions += ['handler' => $handlerStack,];
+        $defaultOptions += ['handler' => $handlerStack, ];
 
         // Attempt instantiating the client. Generally we should only run into issues if any options
         // passed to Guzzle are incorrectly defined/configured.
@@ -274,11 +274,11 @@ final class Client
      *                                       should be avoided, and instead sent with the {@see self::send()} method when making a request. If a
      *                                       'query' key is found in the $options array, it will raise an InvalidArgumentException.
      *
-     * @throws GuzzleInvalidArgumentException                           If Guzzle encounters an error with passed options
-     * @throws InvalidArgumentException                                 If 'query' is passed in options. Should only be done on the send() call.
-     *                                                                  Or if an invalid headers array is passed in options.
+     * @throws GuzzleInvalidArgumentException                       If Guzzle encounters an error with passed options
+     * @throws InvalidArgumentException                             If 'query' is passed in options. Should only be done on the send() call.
+     *                                                              Or if an invalid headers array is passed in options.
      * @throws RuntimeException
-     * @throws ClientException | GuzzleException | BadResponseException
+     * @throws BadResponseException|ClientException|GuzzleException
      */
     public function buildAndSend(string $method, ?string $endpoint = null, ?array $options = null): ResponseInterface
     {
@@ -323,11 +323,11 @@ final class Client
      *
      * @see https://docs.guzzlephp.org/en/stable/request-options.html
      *
-     * @return ResponseInterface An object implementing PSR's ResponseInterface object.
-     *
      * @throws InvalidArgumentException
      * @throws RuntimeException
-     * @throws ClientException | GuzzleException | BadResponseException
+     * @throws BadResponseException|ClientException|GuzzleException
+     *
+     * @return ResponseInterface An object implementing PSR's ResponseInterface object.
      */
     public function send(string $method, ?string $endpoint = null, ?array $options = null): ResponseInterface
     {

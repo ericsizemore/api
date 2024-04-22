@@ -208,7 +208,7 @@ final class ClientTest extends TestCase
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, array{}|string|null> $data * */
+        /** @var array<string, null|array{}|string> $data * */
         $data = json_decode($response->getBody()->getContents(), true);
         self::assertNotEmpty($data);
 
@@ -237,7 +237,7 @@ final class ClientTest extends TestCase
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, array{}|string|null> $data * */
+        /** @var array<string, null|array{}|string> $data * */
         $data = json_decode($response->getBody()->getContents(), true);
         self::assertNotEmpty($data);
 
@@ -266,7 +266,7 @@ final class ClientTest extends TestCase
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, array{}|string|null> $data * */
+        /** @var array<string, null|array{}|string> $data * */
         $data = json_decode($response->getBody()->getContents(), true);
         self::assertNotEmpty($data);
 
@@ -352,7 +352,7 @@ final class ClientTest extends TestCase
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json'],]);
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], ]);
 
         $this->expectException(RateLimitExceededException::class);
         $response = $client->send('GET', '429');
@@ -370,7 +370,7 @@ final class ClientTest extends TestCase
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json'],]);
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], ]);
 
         $this->expectException(ServerException::class);
         $response = $client->send('GET', '500');
@@ -470,7 +470,7 @@ final class ClientTest extends TestCase
         self::assertSame(10, $maxRetries);
     }
 
-    private function buildTestClient(string | bool | null ...$params): Client
+    private function buildTestClient(null|bool|string ...$params): Client
     {
         static $called;
 
