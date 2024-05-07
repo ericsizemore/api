@@ -348,14 +348,14 @@ final class ClientTest extends TestCase
 
     public function testClientWithRetriesRetryAfterHeaderRateLimited(): void
     {
-        $client = $this->buildTestClient('https://esiapi.free.beeceptor.com/', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('https://esiapi.free.mockoapp.net/', 'test', sys_get_temp_dir());
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], ]);
 
         $this->expectException(RateLimitExceededException::class);
-        $response = $client->send('GET', '429');
+        $response = $client->send('GET', '/429');
 
         self::assertSame(429, $response->getStatusCode());
 
@@ -366,14 +366,14 @@ final class ClientTest extends TestCase
 
     public function testClientWithRetriesRetryAfterHeaderServerError(): void
     {
-        $client = $this->buildTestClient('https://esiapi.free.beeceptor.com/', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('https://esiapi.free.mockoapp.net/', 'test', sys_get_temp_dir());
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], ]);
 
         $this->expectException(ServerException::class);
-        $response = $client->send('GET', '500');
+        $response = $client->send('GET', '/500');
 
         self::assertSame(500, $response->getStatusCode());
 

@@ -12,6 +12,8 @@ Simply replace the version numbers depending on which set of changes you wish to
   * Updated header docblock for each file to be more compact.
   * Updated PHP-CS-Fixer configuration with new coding style rules; updated source files with these changes.
   * Updated `phpunit.xml` with the new 11.1 schema/options.
+  * Replace `BeeCeptor` with [`Mocko`](https://mocko.dev).
+
 
 ### 1.0.1 (2024-02-06)
 
