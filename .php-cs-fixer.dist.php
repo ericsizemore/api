@@ -114,5 +114,6 @@ $config
             ->in(__DIR__ . '/tests')
     )
 ;
+$config->setParallelConfig(PhpCsFixer\Runner\Parallel\ParallelConfigFactory::detect());
 
 return $config;
