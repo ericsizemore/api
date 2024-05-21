@@ -1,13 +1,21 @@
-## CHANGELOG
-A not so exhaustive list of changes for each release.
+# Changelog
 
-For a more detailed listing of changes between each version, 
-you can use the following url: https://github.com/ericsizemore/api/compare/v1.0.0...v1.0.1. 
+All notable changes to this project will be documented in this file.
 
-Simply replace the version numbers depending on which set of changes you wish to see.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
 
-### Unreleased
+### Added
+
+  * Added issue and pull request templates.
+  * Added `backward-compatibility.md` - a backward compatibility promise.
+  * Added a Contributor Code of Conduct, CODE_OF_CONDUCT.md.
+  * Added a CONTRIBUTING file with information for contributing to the project.
+  * Added SECURITY.md
+
+### Changed
 
   * Updated header docblock for each file to be more compact.
   * Updated PHP-CS-Fixer configuration with new coding style rules; updated source files with these changes.
@@ -15,15 +23,14 @@ Simply replace the version numbers depending on which set of changes you wish to
   * Replace `BeeCeptor` and `HTTPBinGo` with `Mocko`
     * Requires installing Mocko [standalone](https://mocko.dev/docs/getting-started/standalone/). Also see [the Unit Tests section of the README](README.md#unit-tests).
   * Replaces the composer section of the workflows with `ramsey/composer-install`.
-
-
-### 1.0.1 (2024-02-06)
-
-  * Added SECURITY.md
   * Updated the `retryDecider` and `retryDelay` functions.
     * Added new tests/modified existing for these changes.
     * Using [`BeeCeptor`](https://beeceptor.com) instead of [`HttpBin`](https://httpbin.org) for some tests.
 
-### 1.0.0 (2024-02-06)
+
+## [1.0.0] - 2024-02-06
 
   * Initial release.
+
+[unreleased]: https://github.com/ericsizemore/api/tree/main
+[1.0.0]: https://github.com/ericsizemore/api/releases/tag/v1.0.0

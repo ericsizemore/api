@@ -70,8 +70,8 @@
     },
     "scripts": {
         "coverage-check": "vendor/bin/coverage-check build/logs/clover.xml 100",
-        "phpcs-fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
-        "phpcs-nofix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff",
+        "cs:fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
+        "cs:check": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff",
         "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon",
         "test": "phpunit"
     }
