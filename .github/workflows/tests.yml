@@ -7,31 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    name:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-           fetch-depth: 10
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-           node-version: 21.x
-           cache: 'npm'
-
-      - name: Build Mocko
-        run: npm i -g @mocko/cli
-
-      - name: Check Mocko installation
-        run: mocko --help
-
-      - name: Start Mocko
-        run: (mocko -p 8080 ./mock-server &)
-
   test:
-    needs: build
     name: Run Unit Tests ${{ matrix.php }}
     runs-on: ubuntu-latest
     strategy:
@@ -57,6 +33,21 @@ jobs:
         with:
            composer-options: "--prefer-dist --optimize-autoloader"
            require-lock-file: "true"
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+           node-version: 21.x
+           cache: 'npm'
+
+      - name: Build Mocko
+        run: npm i -g @mocko/cli
+
+      - name: Check Mocko installation
+        run: mocko --help
+
+      - name: Start Mocko
+        run: (mocko -p 8080 ./mock-server &)
 
       - name: Run test suite
         run: composer run-script test
