@@ -7,17 +7,10 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
-    name: Run Unit Tests ${{ matrix.php }}
+  build:
+    name:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: [ '8.2', '8.3' ]
     steps:
-      - uses: actions/checkout@v4
-        with:
-           fetch-depth: 10
-
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,6 +25,18 @@ jobs:
 
       - name: Start Mocko
         run: mocko -p 8080 ./mock-server
+
+  test:
+    needs: build
+    name: Run Unit Tests ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: [ '8.2', '8.3' ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+           fetch-depth: 10
 
       - name: Install PHP ${{ matrix.php }}
         uses: shivammathur/setup-php@master
