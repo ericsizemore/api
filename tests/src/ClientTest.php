@@ -38,10 +38,9 @@ use const DIRECTORY_SEPARATOR;
 /**
  * Client Tests.
  *
- * These tests are... a mess. Needs some cleaning up.
- *
- * @todo I do not like testing against a live service. Though, in this case, it uses https://httpbin.org instead of
- *       an actual live API. Would likely be best to just do everything through Mocks.
+ * These tests make use of a local Mock server by using Mocko
+ * @see https://mocko.dev/docs/getting-started/standalone/
+ * @see https://github.com/ericsizemore/api#unit-tests
  *
  * @internal
  */
@@ -76,13 +75,13 @@ final class ClientTest extends TestCase
     public function testClientApiKeyEmptyString(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->buildTestClient('https://httpbingo.org', '', sys_get_temp_dir());
+        $this->buildTestClient('http://localhost:8080/', '', sys_get_temp_dir());
     }
 
     public function testClientApiKeyNull(): void
     {
         $this->expectException(InvalidArgumentException::class);
-        $this->buildTestClient('https://httpbingo.org', null, sys_get_temp_dir());
+        $this->buildTestClient('http://localhost:8080/', null, sys_get_temp_dir());
     }
 
     public function testClientApiUrlEmptyString(): void
@@ -93,7 +92,7 @@ final class ClientTest extends TestCase
 
     public function testClientBuildAndSend(): void
     {
-        $client   = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client   = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir());
         $response = $client->buildAndSend('GET', '/get', [
             'persistentHeaders' => ['Accept' => 'application/json'],
             'timeout'           => '5.0',
@@ -110,7 +109,7 @@ final class ClientTest extends TestCase
 
     public function testClientBuildExtraOptions(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
 
         $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
@@ -126,10 +125,10 @@ final class ClientTest extends TestCase
 
     public function testClientBuildNoOptionsNoQueryWithApi(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->build();
 
-        $response = $client->send('GET', '/get');
+        $response = $client->send('GET', '/get/noquery');
 
         self::assertSame(200, $response->getStatusCode());
 
@@ -140,10 +139,10 @@ final class ClientTest extends TestCase
 
     public function testClientBuildNoOptionsNoQueryWithoutApi(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
         $client->build();
 
-        $response = $client->send('GET', '/get');
+        $response = $client->send('GET', '/get/noquery');
 
         self::assertSame(200, $response->getStatusCode());
 
@@ -155,30 +154,30 @@ final class ClientTest extends TestCase
 
     public function testClientBuildWithInvalidOption(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
         $this->expectException(InvalidArgumentException::class);
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timut' => '5.0']);
     }
 
     public function testClientError(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
 
         $this->expectException(ClientException::class);
-        $client->send('GET', '/status/404');
+        $client->send('GET', '/404');
     }
 
     public function testClientPersistentHeadersInvalid(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
         $this->expectException(InvalidArgumentException::class);
         $client->build(['persistentHeaders' => ['Accept', 'application/json']]);
     }
 
     public function testClientSendInvalidMethod(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
 
         $this->expectException(InvalidArgumentException::class);
@@ -187,14 +186,14 @@ final class ClientTest extends TestCase
 
     public function testClientSendWithoutBuildFirst(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'testnobuild', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'testnobuild', sys_get_temp_dir());
         $this->expectException(RuntimeException::class);
         $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
     }
 
     public function testClientWithApiParamsAsHeaderNoQuery(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
 
         $client->build([
             'persistentHeaders' => [
@@ -223,7 +222,7 @@ final class ClientTest extends TestCase
 
     public function testClientWithApiParamsAsHeaderWithQuery(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
 
         $client->build([
             'persistentHeaders' => [
@@ -233,7 +232,7 @@ final class ClientTest extends TestCase
 
             ]]);
 
-        $response = $client->send('GET', '/anything', ['query' => ['foo' => 'bar']]);
+        $response = $client->send('GET', '/anything/query1', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
@@ -262,7 +261,7 @@ final class ClientTest extends TestCase
 
             ]]);
 
-        $response = $client->send('GET', '/anything', ['query' => ['foo' => 'bar']]);
+        $response = $client->send('GET', '/anything/query2', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
@@ -285,27 +284,11 @@ final class ClientTest extends TestCase
 
     public function testClientWithApiQuery(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir(), true, 'api_key');
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json']]);
 
-        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
-
-        self::assertSame(200, $response->getStatusCode());
-
-        $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
-        self::assertSame(['api_key' => ['test'], 'foo' => ['bar']], $data['args']);
-    }
-
-    public function testClientWithExtraQueryHeaders(): void
-    {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
-        $client->build([
-            'persistentHeaders' => ['Accept' => 'application/json'],
-        ]);
-        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
+        $response = $client->send('GET', '/get/withkey', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
@@ -317,7 +300,7 @@ final class ClientTest extends TestCase
 
     public function testClientWithQueryInBuildOptions(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir(), true, 'api_key');
 
         $this->expectException(InvalidArgumentException::class);
         $client->build([
@@ -330,14 +313,14 @@ final class ClientTest extends TestCase
 
     public function testClientWithRetries(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json']]);
 
         $this->expectException(ServerException::class);
-        $response = $client->send('GET', '/status/500', ['query' => ['foo' => 'bar']]);
+        $response = $client->send('GET', '/500/nodelay', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(500, $response->getStatusCode());
 
@@ -348,7 +331,7 @@ final class ClientTest extends TestCase
 
     public function testClientWithRetriesRetryAfterHeaderRateLimited(): void
     {
-        $client = $this->buildTestClient('https://esiapi.free.mockoapp.net/', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir());
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
@@ -366,7 +349,7 @@ final class ClientTest extends TestCase
 
     public function testClientWithRetriesRetryAfterHeaderServerError(): void
     {
-        $client = $this->buildTestClient('https://esiapi.free.mockoapp.net/', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir());
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
@@ -384,7 +367,7 @@ final class ClientTest extends TestCase
 
     public function testDisableRetryAttempts(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->disableRetryAttempts();
 
         $reflectionClass = new ReflectionClass($client::class);
@@ -394,7 +377,7 @@ final class ClientTest extends TestCase
 
     public function testEnableRetryAttempts(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->enableRetryAttempts();
 
         $reflectionClass = new ReflectionClass($client::class);
@@ -404,7 +387,7 @@ final class ClientTest extends TestCase
 
     public function testParseWithJsonTraitRaw(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->build([
             'persistentHeaders' => ['Accept' => 'application/json'],
         ]);
@@ -417,11 +400,11 @@ final class ClientTest extends TestCase
 
     public function testParseWithJsonTraitToArray(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->build([
             'persistentHeaders' => ['Accept' => 'application/json'],
         ]);
-        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
+        $response = $client->send('GET', '/get/full', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertInstanceOf(Response::class, $response);
@@ -435,11 +418,11 @@ final class ClientTest extends TestCase
 
     public function testParseWithJsonTraitToObject(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->build([
             'persistentHeaders' => ['Accept' => 'application/json'],
         ]);
-        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
+        $response = $client->send('GET', '/get/full', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertInstanceOf(Response::class, $response);
@@ -453,16 +436,16 @@ final class ClientTest extends TestCase
 
     public function testRateLimitExceeded(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir());
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
 
         $this->expectException(RateLimitExceededException::class);
-        $client->send('GET', '/status/429');
+        $client->send('GET', '/429');
     }
 
     public function testSetMaxRetryAttempts(): void
     {
-        $client = $this->buildTestClient('https://httpbingo.org', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
         $client->setMaxRetryAttempts(10);
 
         $reflectionClass = new ReflectionClass($client::class);

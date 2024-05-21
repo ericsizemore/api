@@ -7,12 +7,14 @@ you can use the following url: https://github.com/ericsizemore/api/compare/v1.0.
 Simply replace the version numbers depending on which set of changes you wish to see.
 
 
-###
+### Unreleased
 
   * Updated header docblock for each file to be more compact.
   * Updated PHP-CS-Fixer configuration with new coding style rules; updated source files with these changes.
   * Updated `phpunit.xml` with the new 11.1 schema/options.
-  * Replace `BeeCeptor` with [`Mocko`](https://mocko.dev).
+  * Replace `BeeCeptor` and `HTTPBinGo` with `Mocko`
+    * Requires installing Mocko [standalone](https://mocko.dev/docs/getting-started/standalone/). Also see [the Unit Tests section of the README](README.md#unit-tests).
+  * Replaces the composer section of the workflows with `ramsey/composer-install`.
 
 
 ### 1.0.1 (2024-02-06)

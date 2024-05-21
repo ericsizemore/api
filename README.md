@@ -108,6 +108,28 @@ when documenting new functions, or changing existing documentation.
 
 One thing at a time: A pull request should only contain one change. That does not mean only one commit, but one change - however many commits it took. The reason for this is that if you change X and Y but send a pull request for both at the same time, we might really want X but disagree with Y, meaning we cannot merge the request. Using the Git-Flow branching model you can create new branches for both of these features and send two requests.
 
+#### Unit Tests
+
+Unit tests are handled with PHPUnit. The tests make use of a mock server to run against, which requires [mocko/cli](https://mocko.dev/docs/getting-started/standalone/). To run the tests:
+
+1. Install [Node.js](https://nodejs.org/en/learn/getting-started/how-to-install-nodejs).
+2. Install `mocko/cli`
+```bash
+$ npm i -g @mocko/cli
+```
+3. Install `esi/api` with [Composer](https://getcomposer.org/doc/00-intro.md), with dev dependencies
+```bash
+$ composer install esi/api
+```
+4. Start the `mocko` server
+```bash
+$ mocko --watch ./mock-server
+```
+5. Run the unit tests
+```bash
+$ composer run-script test
+```
+
 ### Author
 
 Eric Sizemore - <admin@secondversion.com> - <https://www.secondversion.com>
