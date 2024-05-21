@@ -28,7 +28,7 @@ jobs:
         run: mocko --help
 
       - name: Start Mocko
-        run: mocko -p 8080 ./mock-server
+        run: (mocko -p 8080 ./mock-server &)
 
   test:
     needs: build
