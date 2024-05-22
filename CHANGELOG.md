@@ -25,7 +25,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Replaces the composer section of the workflows with `ramsey/composer-install`.
   * Updated the `retryDecider` and `retryDelay` functions.
     * Added new tests/modified existing for these changes.
-    * Using [`BeeCeptor`](https://beeceptor.com) instead of [`HttpBin`](https://httpbin.org) for some tests.
 
 
 ## [1.0.0] - 2024-02-06
