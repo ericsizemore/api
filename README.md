@@ -9,6 +9,10 @@ Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
 [![Downloads per Month](https://img.shields.io/packagist/dm/esi/api.svg)](https://packagist.org/packages/esi/api)
 [![License](https://img.shields.io/packagist/l/esi/api.svg)](https://packagist.org/packages/esi/api)
 
+# Note
+
+* This is the development branch (`2.x-dev`) for the next major release (`2.0.0`). The class api's/method signatures/etc. can, and will likely, change.
+* It is not recommended to use this development branch in production.
 
 ## About
 
@@ -25,17 +29,35 @@ It has a long way to go, but it should be relatively stable.
   * `Client::disableRetryAttempts()` to disable attempt retries.
   * `Client::setMaxRetryAttempts()` to set the maximum number of retries.
 * Can pass along headers in `Client::build()` to be 'persistent' headers, i.e. headers sent with every request.
-* One function that handles sending a request: `Client::send()`
+* Various methods to send a request, depending on HTTP method needed: `delete()`, `get()`, `post()`, and `put()`.
 
-It currently does not support async requests and pooling. Just your regular, good 'ol, standard requests.
+It currently does not support:
+  * async requests and pooling; just your regular, good 'ol, standard requests.
+  * `HEAD`, `OPTIONS`, `PATCH`, etc.
+
 
 ## Example
 ```php
 use Esi\Api\Client;
 
-// api url, api key, cache path, does the api require key sent as a query arg, the name of the query arg
-$client = new Client('https://myapiurl.com/api', 'myApiKey', '/var/tmp', true, 'api_key');
-
+/**
+ * $options, array of:
+ *
+ * apiUrl           - URL to the API.
+ * apiKey           - Your API Key.
+ * cachePath        - The path to your cache on the filesystem.
+ * apiRequiresQuery - True if the API requires the api key sent via query/query string, false otherwise.
+ * apiParamName     - If apiRequiresQuery = true, then the param name for the api key. E.g.: api_key
+ *
+ */
+$client = new Client([
+    'apiUrl'           => 'https://myapiurl.com/api',
+    'apiKey'           => 'myApiKey',
+    'cachePath'        => '/var/tmp',
+    'apiParamName'     => 'api_key',
+    'apiRequiresQuery' => true,
+]);
+        
 // Must first 'build' the client with (optional) $options array which can include any valid Guzzle option.
 $client->build([
     'persistentHeaders' => [
@@ -47,7 +69,7 @@ $client->build([
 $client->enableRetryAttempts();
 $client->setMaxRetryAttempts(5);
 
-$response = $client->send('GET', '/', ['query' => ['foo' => 'bar']]);
+$response = $client->get('/', ['query' => ['foo' => 'bar']]);
 
 // Decode the json and return as array
 $data = $client->toArray($response);

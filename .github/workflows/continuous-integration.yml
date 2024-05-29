@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  COMPOSER_ROOT_VERSION: "1.99.99"
+  COMPOSER_ROOT_VERSION: "2.99.99"
 
 jobs:
   phpstan:

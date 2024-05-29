@@ -7,9 +7,8 @@ declare(strict_types=1);
  *
  * (c) Eric Sizemore <admin@secondversion.com>
  *
- * This source file is subject to the MIT license. For the full
- * copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+ * This source file is subject to the MIT license. For the full copyright and license
+ * information, please view the LICENSE file that was distributed with this source code.
  */
 
 namespace Esi\Api;
@@ -23,29 +22,35 @@ use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\InvalidArgumentException as GuzzleInvalidArgumentException;
+use GuzzleHttp\Exception\InvalidArgumentException;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\RetryMiddleware;
-use InvalidArgumentException;
 use Kevinrob\GuzzleCache\CacheMiddleware;
 use Kevinrob\GuzzleCache\Storage\Psr6CacheStorage;
 use Kevinrob\GuzzleCache\Strategy\PrivateCacheStrategy;
+use Kevinrob\GuzzleCache\Strategy\PublicCacheStrategy;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use RuntimeException;
-use SensitiveParameter;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Cache\Adapter\AbstractAdapter;
+use Symfony\Component\OptionsResolver\Exception\ExceptionInterface;
+use Symfony\Component\OptionsResolver\Options;
+use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\Url;
+use Symfony\Component\Validator\Validation;
 use Throwable;
 
 use function array_keys;
 use function is_dir;
 use function is_numeric;
 use function is_writable;
+use function ltrim;
 use function range;
 use function sprintf;
-use function strtoupper;
+use function str_ends_with;
 use function time;
 use function trim;
 
@@ -54,9 +59,15 @@ use function trim;
  *
  * Note: Only designed for non-asynchronous, non-pool, and non-promise requests currently.
  *
- * @todo Allow more cache options. Currently the only option is via files using Symfony's FilesystemAdapter.
- *
  * @see Tests\ClientTest
+ *
+ * @phpstan-type ClientOptionsArray = array{
+ *     apiUrl: string,
+ *     apiKey: string,
+ *     apiParamName?: string|null,
+ *     apiRequiresQuery?: bool,
+ *     cachePath?: string|null
+ * }
  */
 final class Client
 {
@@ -68,25 +79,45 @@ final class Client
     use ParseJsonResponse;
 
     /**
+     * Options allowed to be passed in self::send().
+     *
+     * @var array<string>
+     */
+    protected const GUZZLE_OPTIONS = [
+        'allow_redirects',
+        'auth',
+        'body',
+        'cert',
+        'cookies',
+        'connect_timeout',
+        'debug',
+        'decode_content',
+        'delay',
+        'expect',
+        'force_ip_resolve',
+        'form_params',
+        'headers',
+        'idn_conversion',
+        'json',
+        'multipart',
+        'on_headers',
+        'on_stats',
+        'progress',
+        'proxy',
+        'query',
+        'read_timeout',
+        'sink',
+        'ssl_key',
+        'stream',
+        'synchronous',
+        'verify',
+        'version',
+    ];
+
+    /**
      * GuzzleHttp Client.
      */
     public ?GuzzleClient $client = null;
-
-    /**
-     * API key.
-     */
-    private readonly string $apiKey;
-
-    /**
-     * If $this->apiRequiresQuery = true, then what is the name of the
-     * query parameter for the API key? For example: api_key.
-     */
-    private readonly string $apiParamName;
-
-    /**
-     * Base API endpoint.
-     */
-    private readonly string $apiUrl;
 
     /**
      * Will add the Guzzle Retry middleware to requests if enabled.
@@ -97,9 +128,11 @@ final class Client
     private bool $attemptRetry = false;
 
     /**
-     * Path to your cache folder on the file system.
+     * Base options for the main class, Client.
+     *
+     * @var ClientOptionsArray
      */
-    private ?string $cachePath = null;
+    private array $clientOptions;
 
     /**
      * Maximum number of retries that the Retry middleware will attempt.
@@ -117,60 +150,44 @@ final class Client
     /**
      * Constructor.
      *
-     * @param string  $apiUrl           URL to the API.
-     * @param ?string $apiKey           Your API Key.
-     * @param ?string $cachePath        The path to your cache on the filesystem.
-     * @param bool    $apiRequiresQuery True if the API requires the api key sent via query/query string, false otherwise.
-     * @param string  $apiParamName     If $apiRequiresQuery = true, then the param name for the api key. E.g.: api_key
+     * @param ClientOptionsArray $options
      *
-     * @throws InvalidArgumentException If either the api key or api url are empty strings.
+     *      apiUrl           - URL to the API.
+     *      apiKey           - Your API Key.
+     *      cachePath        - The path to your cache on the filesystem.
+     *      apiRequiresQuery - True if the API requires the api key sent via query/query string, false otherwise.
+     *      apiParamName     - If apiRequiresQuery = true, then the param name for the api key. E.g.: api_key
+     *
+     * @throws ExceptionInterface If provided options are not of the correct type or an invalid value.
      */
-    public function __construct(
-        string $apiUrl,
-        #[SensitiveParameter]
-        ?string $apiKey = null,
-        ?string $cachePath = null,
-        // Does this particular API require the API key to be sent in the query string?
-        private readonly bool $apiRequiresQuery = false,
-        string $apiParamName = ''
-    ) {
-        $apiUrl       = trim($apiUrl);
-        $apiKey       = trim((string) $apiKey);
-        $apiParamName = trim($apiParamName);
-        $cachePath    = trim((string) $cachePath);
-
-        if ($apiUrl === '') {
-            throw new InvalidArgumentException('API URL expects non-empty-string, empty-string provided.');
-        }
+    public function __construct(array $options)
+    {
+        $optionsResolver = new OptionsResolver();
+        $this->configureClientOptions($optionsResolver);
 
         /**
-         * @todo Some APIs require api keys, some don't.
+         * @var ClientOptionsArray $clientOptions
          */
-        if ($apiKey === '') {
-            throw new InvalidArgumentException('API key expects a non-empty-string, empty-string provided.');
-        }
-
-        $this->apiUrl       = $apiUrl;
-        $this->apiKey       = $apiKey;
-        $this->apiParamName = $apiParamName;
-
-        if (is_dir($cachePath) && is_writable($cachePath)) {
-            $this->cachePath = $cachePath;
-        }
+        $clientOptions       = $optionsResolver->resolve($options);
+        $this->clientOptions = $clientOptions;
     }
 
     /**
      * Builds our GuzzleHttp client.
      *
      * Some APIs require requests be made with the api key via query string; others, by setting a header. If the particular API you are querying
-     * needs it sent via query string, be sure to instantiate this class with $apiRequiresQuery set to true and by providing the expected field
-     * name used for the api key. E.g.: api_key
+     * needs it sent via query string, be sure to instantiate this class with 'apiRequiresQuery' set to true and by providing the expected field
+     * name used for the api key. E.g.: ['apiParamName' => 'api_key']
      *
      * Otherwise, if it is sent via header, be sure to add the headers in the $options array when calling build(). This can be done with
      * 'persistentHeaders' which contains key => value pairs of headers to set. For e.g.:
      *
      * <code>
-     *      $client = new Client('https://myapiurl.com/api', 'myApiKey', '/var/tmp');
+     *      $client = new Client([
+     *          'apiUrl'    => 'https://myapiurl.com/api',
+     *          'apiKey'    => 'myApiKey',
+     *          'cachePath' => '/var/tmp'
+     *      ]);
      *      $client->build([
      *          'persistentHeaders' => [
      *              'Accept'        => 'application/json',
@@ -186,112 +203,79 @@ final class Client
      *                                      One exception to this is the use of non-Guzzle, Esi\Api specific options:
      *                                      persistentHeaders - Key => Value array where key is the header name and value is the header value.
      *                                      Also of note, right now this class is built in such a way that adding 'query' to the build options
-     *                                      should be avoided, and instead sent with the {@see self::send()} method when making a request. If a
-     *                                      'query' key is found in the $options array, it will raise an InvalidArgumentException.
+     *                                      should be avoided, and instead sent with the {@see self::send()} method when making a request.
      *
-     * @throws GuzzleInvalidArgumentException If Guzzle encounters an error with passed options
-     * @throws InvalidArgumentException       If 'query' is passed in options. Should only be done on the send() call.
-     *                                        Or if an invalid headers array is passed in options.
+     * @throws InvalidArgumentException If Guzzle encounters an error with passed options.
+     * @throws ExceptionInterface       If an invalid headers array is passed in options.
      */
-    public function build(?array $options = null): GuzzleClient
+    public function build(array $options = []): GuzzleClient
     {
-        // Default options
-        $defaultOptions = [
-            'base_uri'    => $this->apiUrl,
-            'http_errors' => true,
-            'timeout'     => 10,
-        ];
+        // Do not allow overriding these options
+        unset($options['base_uri'], $options['http_errors'], $options['query']);
+
+        // Does the API key need to be sent as part of the query?
+        if (isset($this->clientOptions['apiRequiresQuery'], $this->clientOptions['apiParamName']) && $this->clientOptions['apiRequiresQuery']) {
+            $options += [
+                'query' => [
+                    $this->clientOptions['apiParamName'] => $this->clientOptions['apiKey'],
+                ],
+            ];
+        }
+
+        $buildOptions = $this->createBuildOptionsResolver()->resolve($options);
 
         // Create default HandlerStack
         $handlerStack = HandlerStack::create();
 
-        // Process options.
-        if ($options !== null) {
-            // Do we need to add any persistent headers (headers sent with every request)?
-            if (isset($options['persistentHeaders'])) {
-                /** @var array<string> $headers * */
-                $headers = $options['persistentHeaders'];
+        // Do we need to add any persistent headers (headers sent with every request)?
+        if (isset($buildOptions['persistentHeaders'])) {
+            /** @var array<string> $headers * */
+            $headers = $buildOptions['persistentHeaders'];
 
-                if (array_keys($headers) === range(0, \count($headers) - 1)) {
-                    throw new InvalidArgumentException('The headers array must have header name as keys.');
-                }
-
-                // We use Middleware and add the headers to our handler stack.
-                foreach ($headers as $header => $value) {
-                    $handlerStack->unshift(Middleware::mapRequest(
-                        static fn (RequestInterface $request): MessageInterface => $request->withHeader($header, $value)
-                    ));
-                }
+            // We use Middleware and add the headers to our handler stack.
+            foreach ($headers as $header => $value) {
+                $handlerStack->unshift(Middleware::mapRequest(
+                    static fn (RequestInterface $request): MessageInterface => $request->withHeader($header, $value)
+                ));
             }
-
-            if (isset($options['query'])) {
-                throw new InvalidArgumentException('Please only specify a query parameter for options when using ::send()');
-            }
-
-            Utils::verifyOptions($options);
-
-            $defaultOptions += $options;
-        }
-
-        // Does the API key need to be sent as part of the query?
-        if ($this->apiRequiresQuery) {
-            $defaultOptions += [
-                'query' => [$this->apiParamName => $this->apiKey],
-            ];
         }
 
         // If we have a cache path, create our Cache handler.
-        if ($this->cachePath !== null) {
+        if (isset($this->clientOptions['cachePath'])) {
             $handlerStack->push(new CacheMiddleware(new PrivateCacheStrategy(
-                new Psr6CacheStorage(new FilesystemAdapter('', 300, $this->cachePath))
-            )), 'cache');
+                new Psr6CacheStorage(AbstractAdapter::createSystemCache('api', 300, '2.0.0', $this->clientOptions['cachePath'] . \DIRECTORY_SEPARATOR . 'private'))
+            )), 'private-cache');
+
+            $handlerStack->push(new CacheMiddleware(new PublicCacheStrategy(
+                new Psr6CacheStorage(AbstractAdapter::createSystemCache('api', 300, '2.0.0', $this->clientOptions['cachePath'] . \DIRECTORY_SEPARATOR . 'shared'))
+            )), 'shared-cache');
         }
 
         if ($this->attemptRetry) {
             $handlerStack->push(Middleware::retry($this->retryDecider(), $this->retryDelay()));
         }
 
-        $defaultOptions += ['handler' => $handlerStack, ];
+        $buildOptions += ['handler' => $handlerStack, ];
 
         // Attempt instantiating the client. Generally we should only run into issues if any options
         // passed to Guzzle are incorrectly defined/configured.
-        $this->client = new GuzzleClient($defaultOptions);
+        $this->client = new GuzzleClient($buildOptions);
 
         // All done!
         return $this->client;
     }
 
     /**
-     * Builds the client and sends the request, all in one: basically just combines {@see self::build()} and {@see self::send()}.
+     * @param string               $endpoint Endpoint to call on the API.
+     * @param array<string, mixed> $options  An associative array with options to set per request.
      *
-     * @param string               $method   The method to use, such as GET.
-     * @param ?string              $endpoint Endpoint to call on the API.
-     * @param array<string, mixed> $options  An associative array with options to set in the initial config of the Guzzle
-     *                                       client. {@see https://docs.guzzlephp.org/en/stable/request-options.html}
-     *                                       One exception to this is the use of non-Guzzle, Esi\Api specific options:
-     *                                       persistentHeaders - Key => Value array where key is the header name and value is the header value.
-     *                                       Also of note, right now this class is built in such a way that adding 'query' to the build options
-     *                                       should be avoided, and instead sent with the {@see self::send()} method when making a request. If a
-     *                                       'query' key is found in the $options array, it will raise an InvalidArgumentException.
-     *
-     * @throws GuzzleInvalidArgumentException                       If Guzzle encounters an error with passed options
-     * @throws InvalidArgumentException                             If 'query' is passed in options. Should only be done on the send() call.
-     *                                                              Or if an invalid headers array is passed in options.
-     * @throws RuntimeException
-     * @throws BadResponseException|ClientException|GuzzleException
+     * @see https://docs.guzzlephp.org/en/stable/request-options.html
      */
-    public function buildAndSend(string $method, ?string $endpoint = null, ?array $options = null): ResponseInterface
+    public function delete(string $endpoint = '', array $options = []): ResponseInterface
     {
-        $query = $options['query'] ?? [];
-        unset($options['query']);
+        $normalized = $this->normalizeRequestOptions($endpoint, $options);
 
-        $this->build($options);
-
-        if ($query !== []) {
-            $options['query'] = $query;
-        }
-
-        return $this->send($method, $endpoint, $options);
+        return $this->send('DELETE', $normalized[0], $normalized[1]);
     }
 
     /**
@@ -315,48 +299,156 @@ final class Client
     }
 
     /**
-     * Performs a synchronous request with given method and API endpoint.
-     *
-     * @param string                $method   The method to use, such as GET.
-     * @param ?string               $endpoint Endpoint to call on the API.
-     * @param ?array<string, mixed> $options  An associative array with options to set per request.
+     * @param string               $endpoint Endpoint to call on the API.
+     * @param array<string, mixed> $options  An associative array with options to set per request.
      *
      * @see https://docs.guzzlephp.org/en/stable/request-options.html
-     *
-     * @throws InvalidArgumentException
-     * @throws RuntimeException
-     * @throws BadResponseException|ClientException|GuzzleException
-     *
-     * @return ResponseInterface An object implementing PSR's ResponseInterface object.
      */
-    public function send(string $method, ?string $endpoint = null, ?array $options = null): ResponseInterface
+    public function get(string $endpoint = '', array $options = []): ResponseInterface
     {
-        // Check for a valid method
-        $method = trim(strtoupper($method));
+        $normalized = $this->normalizeRequestOptions($endpoint, $options);
 
-        Utils::verifyMethod($method);
+        return $this->send('GET', $normalized[0], $normalized[1]);
+    }
 
-        /**
-         * If passing options, verify against the request options Guzzle expects.
-         * {@see https://docs.guzzlephp.org/en/stable/request-options.html}
-         * {@see Utils::verifyOptions()}.
-         */
-        if ($options !== null) {
-            Utils::verifyOptions($options);
-        } else {
-            $options = [];
+    /**
+     * @param string               $endpoint Endpoint to call on the API.
+     * @param array<string, mixed> $options  An associative array with options to set per request.
+     *
+     * @see https://docs.guzzlephp.org/en/stable/request-options.html
+     */
+    public function post(string $endpoint = '', array $options = []): ResponseInterface
+    {
+        $normalized = $this->normalizeRequestOptions($endpoint, $options);
+
+        return $this->send('POST', $normalized[0], $normalized[1]);
+    }
+
+    /**
+     * @param string               $endpoint Endpoint to call on the API.
+     * @param array<string, mixed> $options  An associative array with options to set per request.
+     *
+     * @see https://docs.guzzlephp.org/en/stable/request-options.html
+     */
+    public function put(string $endpoint = '', array $options = []): ResponseInterface
+    {
+        $normalized = $this->normalizeRequestOptions($endpoint, $options);
+
+        return $this->send('PUT', $normalized[0], $normalized[1]);
+    }
+
+    /**
+     * Set the maximum number of retry attempts.
+     */
+    public function setMaxRetryAttempts(int $maxRetries): Client
+    {
+        $this->maxRetries = $maxRetries;
+
+        return $this;
+    }
+
+    /**
+     * Configures options used in building the Client.
+     */
+    protected function configureClientOptions(OptionsResolver $optionsResolver): void
+    {
+        $optionsResolver
+            ->setRequired(['apiUrl', 'apiKey'])
+            ->setDefaults([
+                'apiUrl'           => '',
+                'apiKey'           => '',
+                'apiParamName'     => null,
+                'apiRequiresQuery' => false,
+                'cachePath'        => null,
+            ])
+            ->setAllowedTypes('apiUrl', 'string')
+            ->setAllowedTypes('apiKey', 'string')
+            ->setAllowedTypes('apiParamName', ['string', 'null', ])
+            ->setAllowedTypes('apiRequiresQuery', 'bool')
+            ->setAllowedTypes('cachePath', ['string', 'null', ])
+            ->setNormalizer('apiUrl', static fn (Options $options, string $value): string => trim($value))
+            ->setNormalizer('apiKey', static fn (Options $options, string $value): string => trim($value))
+            ->setNormalizer('apiParamName', static fn (Options $options, ?string $value): string => trim((string) $value))
+            ->setNormalizer('cachePath', static fn (Options $options, ?string $value): string => trim((string) $value))
+            ->setAllowedValues('apiUrl', Validation::createIsValidCallable(new Length(['min' => 1]), new Url(['protocols' => ['http', 'https', ], ])))
+            ->setAllowedValues('apiKey', Validation::createIsValidCallable(new Length(['min' => 1])))
+            ->setAllowedValues('apiParamName', Validation::createIsValidCallable(new Length(['min' => 1])))
+            ->setAllowedValues('cachePath', static fn (string $value): bool => is_dir($value) && is_writable($value))
+        ;
+    }
+
+    /**
+     * Creates an OptionsResolver instance with default options.
+     */
+    protected function createBuildOptionsResolver(): OptionsResolver
+    {
+        $optionsResolver = new OptionsResolver();
+        $optionsResolver->setDefaults([
+            'base_uri'          => $this->clientOptions['apiUrl'],
+            'http_errors'       => true,
+            'timeout'           => 10,
+            'persistentHeaders' => null,
+        ]);
+
+        foreach (self::GUZZLE_OPTIONS as $guzzleOption) {
+            $optionsResolver->setDefined($guzzleOption);
         }
 
-        if ($this->apiRequiresQuery) {
+        return $optionsResolver
+            ->setAllowedTypes('persistentHeaders', ['array', 'null', ])
+            ->setAllowedValues('persistentHeaders', static function (?array $value): bool {
+                if ($value === null) {
+                    return true;
+                }
+
+                return array_keys($value) !== range(0, \count($value) - 1);
+            })
+        ;
+    }
+
+    /**
+     * Takes the endpoint and options for one of the request (get, post, put, ...) functions and normalizes
+     * the endpoint, along with validating any passed options.
+     *
+     * @param array<string, mixed> $options
+     *
+     * @throws ExceptionInterface
+     *
+     * @return array{0: string, 1: array<string, mixed>}
+     */
+    protected function normalizeRequestOptions(string $endpoint = '', array $options = []): array
+    {
+        // Do not allow overriding these options
+        unset($options['base_uri'], $options['http_errors']);
+
+        // Does the API key need to be sent as part of the query?
+        if (isset($this->clientOptions['apiRequiresQuery'], $this->clientOptions['apiParamName']) && $this->clientOptions['apiRequiresQuery']) {
             if (isset($options['query'])) {
-                $options['query'] += [$this->apiParamName => $this->apiKey];
+                $options['query'] += [$this->clientOptions['apiParamName'] => $this->clientOptions['apiKey'], ];
             } else {
-                $options['query'] = [$this->apiParamName => $this->apiKey];
+                $options['query'] = [$this->clientOptions['apiParamName'] => $this->clientOptions['apiKey'], ];
             }
         }
 
-        $endpoint = Utils::normalizeEndpoint($endpoint, $this->apiUrl);
+        $sendOptions = $this->createBuildOptionsResolver()->resolve($options);
+        unset($sendOptions['persistentHeaders']);
 
+        $endpoint = self::normalizeEndpoint($endpoint, $this->clientOptions['apiUrl']);
+
+        return [
+            $endpoint,
+            $sendOptions,
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     *
+     * @throws RuntimeException
+     * @throws BadResponseException|ClientException|GuzzleException
+     */
+    protected function send(string $method, string $endpoint = '', array $options = []): ResponseInterface
+    {
         // Do we have Guzzle instantiated already?
         if (!$this->client instanceof GuzzleClient) {
             throw new RuntimeException(sprintf(
@@ -378,20 +470,23 @@ final class Client
         }
     }
 
-    /**
-     * Set the maximum number of retry attempts.
-     */
-    public function setMaxRetryAttempts(int $maxRetries): Client
+    protected static function normalizeEndpoint(string $endpoint, string $apiUrl): string
     {
-        $this->maxRetries = $maxRetries;
+        $endpoint = ltrim($endpoint, '/');
 
-        return $this;
+        if (!str_ends_with($apiUrl, '/')) {
+            $endpoint = '/' . $endpoint;
+        }
+
+        return $endpoint;
     }
 
     /**
      * For use in the Retry middleware. Decides when to retry a request.
      *
      * NOTE: The Retry middleware will not be used without calling {@see self::enableRetryAttempts()}.
+     *
+     * @return Closure(int, RequestInterface, ResponseInterface=, Throwable=): bool
      */
     private function retryDecider(): Closure
     {

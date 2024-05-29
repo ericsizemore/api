@@ -1,0 +1,11 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Parameter \\#1 \\$params of method Esi\\\\Api\\\\Tests\\\\ClientTest\\:\\:buildTestClient\\(\\) expects array\\{apiUrl\\: string, apiKey\\: string, apiParamName\\?\\: string\\|null, apiRequiresQuery\\?\\: bool, cachePath\\?\\: string\\|null\\}, array\\{apiUrl\\: 'http\\://localhost…', apiKey\\: null, cachePath\\: string\\} given\\.$#"
+			count: 1
+			path: tests/src/ClientTest.php
+
+		-
+			message: "#^Trying to invoke array\\{Esi\\\\Api\\\\Client, string\\} but it might not be a callable\\.$#"
+			count: 1
+			path: tests/src/ClientTest.php

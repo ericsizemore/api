@@ -197,3 +197,54 @@ mock "GET /get/noquery" {
     }
     EOF
 }
+
+mock "DELETE /delete" {
+    status = 200
+
+    headers {
+        Content-Type = "application/json"
+    }
+
+    body = <<EOF
+    {
+        "args": {
+            "api_key":["test"],
+            "foo":["bar"]
+        }
+    }
+    EOF
+}
+
+mock "POST /post" {
+    status = 200
+
+    headers {
+        Content-Type = "application/json"
+    }
+
+    body = <<EOF
+    {
+        "args": {
+            "api_key":["test"],
+            "foo":["bar"]
+        }
+    }
+    EOF
+}
+
+mock "PUT /put" {
+    status = 200
+
+    headers {
+        Content-Type = "application/json"
+    }
+
+    body = <<EOF
+    {
+        "args": {
+            "api_key":["test"],
+            "foo":["bar"]
+        }
+    }
+    EOF
+}

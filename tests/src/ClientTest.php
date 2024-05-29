@@ -7,45 +7,45 @@ declare(strict_types=1);
  *
  * (c) Eric Sizemore <admin@secondversion.com>
  *
- * This source file is subject to the MIT license. For the full
- * copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
+ * This source file is subject to the MIT license. For the full copyright and license
+ * information, please view the LICENSE file that was distributed with this source code.
  */
 
 namespace Esi\Api\Tests;
 
 use Esi\Api\Client;
 use Esi\Api\Exceptions\RateLimitExceededException;
-use Esi\Api\Utils;
+use Generator;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Psr7\Response;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
 use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Path;
+use Symfony\Component\OptionsResolver\Exception\InvalidOptionsException;
+use Symfony\Component\OptionsResolver\Exception\UndefinedOptionsException;
 
 use function is_dir;
 use function json_decode;
-use function serialize;
 use function sys_get_temp_dir;
 
 use const DIRECTORY_SEPARATOR;
 
 /**
- * Client Tests.
+ * These tests make use of a local Mock server by using Mocko.
  *
- * These tests make use of a local Mock server by using Mocko
  * @see https://mocko.dev/docs/getting-started/standalone/
  * @see https://github.com/ericsizemore/api#unit-tests
  *
  * @internal
+ *
+ * @phpstan-import-type ClientOptionsArray from Client
  */
 #[CoversClass(Client::class)]
-#[CoversClass(Utils::class)]
 final class ClientTest extends TestCase
 {
     private static string $cacheDir;
@@ -74,126 +74,144 @@ final class ClientTest extends TestCase
 
     public function testClientApiKeyEmptyString(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->buildTestClient('http://localhost:8080/', '', sys_get_temp_dir());
+        $this->expectException(InvalidOptionsException::class);
+        $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080',
+            'apiKey'    => '',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
     }
 
     public function testClientApiKeyNull(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->buildTestClient('http://localhost:8080/', null, sys_get_temp_dir());
+        $this->expectException(InvalidOptionsException::class);
+        $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080',
+            'apiKey'    => null,
+            'cachePath' => sys_get_temp_dir(),
+        ]);
     }
 
     public function testClientApiUrlEmptyString(): void
     {
-        $this->expectException(InvalidArgumentException::class);
-        $this->buildTestClient('', 'test', sys_get_temp_dir());
-    }
-
-    public function testClientBuildAndSend(): void
-    {
-        $client   = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir());
-        $response = $client->buildAndSend('GET', '/get', [
-            'persistentHeaders' => ['Accept' => 'application/json'],
-            'timeout'           => '5.0',
-            'query'             => ['foo' => 'bar'],
+        $this->expectException(InvalidOptionsException::class);
+        $this->buildTestClient([
+            'apiUrl'    => '',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
         ]);
-
-        self::assertSame(200, $response->getStatusCode());
-
-        $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
-        self::assertSame(['foo' => ['bar']], $data['args']);
     }
 
     public function testClientBuildExtraOptions(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
 
-        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
+        $response = $client->get('/get', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
+        /** @var array<array-key, array<string, array<string>>> $data */
         $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
         self::assertSame(['foo' => ['bar']], $data['args']);
     }
 
     public function testClientBuildNoOptionsNoQueryWithApi(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
         $client->build();
 
-        $response = $client->send('GET', '/get/noquery');
+        $response = $client->get('/get/noquery');
 
         self::assertSame(200, $response->getStatusCode());
 
+        /** @var array<array-key, array<string, array<string>>> $data */
         $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
+        self::assertArrayHasKey('args', $data);
     }
 
     public function testClientBuildNoOptionsNoQueryWithoutApi(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
         $client->build();
 
-        $response = $client->send('GET', '/get/noquery');
+        $response = $client->get('/get/noquery');
 
         self::assertSame(200, $response->getStatusCode());
 
+        /** @var array<array-key, array<string, array<string>>> $data */
         $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
+        self::assertArrayHasKey('args', $data);
         self::assertEmpty($data['args']);
     }
 
     public function testClientBuildWithInvalidOption(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
-        $this->expectException(InvalidArgumentException::class);
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
+        $this->expectException(UndefinedOptionsException::class);
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timut' => '5.0']);
     }
 
     public function testClientError(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
 
         $this->expectException(ClientException::class);
-        $client->send('GET', '/404');
+        $client->get('/404');
     }
 
     public function testClientPersistentHeadersInvalid(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
-        $this->expectException(InvalidArgumentException::class);
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
+        $this->expectException(InvalidOptionsException::class);
         $client->build(['persistentHeaders' => ['Accept', 'application/json']]);
-    }
-
-    public function testClientSendInvalidMethod(): void
-    {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
-        $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
-
-        $this->expectException(InvalidArgumentException::class);
-        $client->send('INVALID', '/get', ['query' => ['foo' => 'bar']]);
     }
 
     public function testClientSendWithoutBuildFirst(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'testnobuild', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
         $this->expectException(RuntimeException::class);
-        $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
+        $client->get('/get', ['query' => ['foo' => 'bar']]);
     }
 
     public function testClientWithApiParamsAsHeaderNoQuery(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080/',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
 
         $client->build([
             'persistentHeaders' => [
@@ -203,16 +221,15 @@ final class ClientTest extends TestCase
 
             ]]);
 
-        $response = $client->send('GET', '/anything');
+        $response = $client->get('/anything');
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, null|array{}|string> $data * */
+        /** @var array<array-key, array<array-key, array<string>>|array{}> $data */
         $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
 
         self::assertNotEmpty($data['headers']);
-        self::assertArrayHasKey('Accept', $data['headers']); // @phpstan-ignore-line
+        self::assertArrayHasKey('Accept', $data['headers']);
         self::assertArrayHasKey('Client-Id', $data['headers']);
         self::assertArrayHasKey('Authorization', $data['headers']);
         self::assertSame(['application/json'], $data['headers']['Accept']);
@@ -222,7 +239,11 @@ final class ClientTest extends TestCase
 
     public function testClientWithApiParamsAsHeaderWithQuery(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080/',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
 
         $client->build([
             'persistentHeaders' => [
@@ -232,24 +253,20 @@ final class ClientTest extends TestCase
 
             ]]);
 
-        $response = $client->send('GET', '/anything/query1', ['query' => ['foo' => 'bar']]);
+        $response = $client->get('/anything/query1', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, null|array{}|string> $data * */
+        /** @var array<array-key, array<array-key, array<string>>|array{}> $data */
         $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
 
         self::assertNotEmpty($data['headers']);
-        self::assertArrayHasKey('Accept', $data['headers']); // @phpstan-ignore-line
+        self::assertArrayHasKey('Accept', $data['headers']);
         self::assertArrayHasKey('Client-Id', $data['headers']);
         self::assertArrayHasKey('Authorization', $data['headers']);
         self::assertSame(['application/json'], $data['headers']['Accept']);
         self::assertSame(['apiKey'], $data['headers']['Client-Id']);
         self::assertSame(['someAccessToken'], $data['headers']['Authorization']);
-
-        self::assertNotEmpty($data['args']);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
         self::assertSame(['foo' => ['bar']], $data['args']);
 
         //
@@ -261,66 +278,60 @@ final class ClientTest extends TestCase
 
             ]]);
 
-        $response = $client->send('GET', '/anything/query2', ['query' => ['foo' => 'bar']]);
+        $response = $client->get('/anything/query2', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
-        /** @var array<string, null|array{}|string> $data * */
+        /** @var array<array-key, array<array-key, array<string>>|array{}> $data */
         $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
 
         self::assertNotEmpty($data['headers']);
-        self::assertArrayHasKey('Accept', $data['headers']); // @phpstan-ignore-line
+        self::assertArrayHasKey('Accept', $data['headers']);
         self::assertArrayHasKey('Client-Id', $data['headers']);
         self::assertArrayHasKey('Authorization', $data['headers']);
         self::assertSame(['application/json'], $data['headers']['Accept']);
         self::assertSame(['anotherApiKey'], $data['headers']['Client-Id']);
         self::assertSame(['someOtherAccessToken'], $data['headers']['Authorization']);
-
-        self::assertNotEmpty($data['args']);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
         self::assertSame(['foo' => ['bar']], $data['args']);
     }
 
     public function testClientWithApiQuery(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json']]);
 
-        $response = $client->send('GET', '/get/withkey', ['query' => ['foo' => 'bar']]);
+        $response = $client->get('/get/withkey', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
 
+        /** @var array<array-key, array<string, array<string>>> $data */
         $data = json_decode($response->getBody()->getContents(), true);
-        self::assertNotEmpty($data);
-        self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
         self::assertSame(['api_key' => ['test'], 'foo' => ['bar']], $data['args']);
-    }
-
-    public function testClientWithQueryInBuildOptions(): void
-    {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir(), true, 'api_key');
-
-        $this->expectException(InvalidArgumentException::class);
-        $client->build([
-            'apiParamName'      => 'api_key',
-            'apiRequiresQuery'  => true,
-            'persistentHeaders' => ['Accept' => 'application/json'],
-            'query'             => ['foo' => 'bar'],
-        ]);
     }
 
     public function testClientWithRetries(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json']]);
 
         $this->expectException(ServerException::class);
-        $response = $client->send('GET', '/500/nodelay', ['query' => ['foo' => 'bar']]);
+        $response = $client->get('/500/nodelay', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(500, $response->getStatusCode());
 
@@ -331,14 +342,18 @@ final class ClientTest extends TestCase
 
     public function testClientWithRetriesRetryAfterHeaderRateLimited(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080/',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], ]);
 
         $this->expectException(RateLimitExceededException::class);
-        $response = $client->send('GET', '/429');
+        $response = $client->get('/429');
 
         self::assertSame(429, $response->getStatusCode());
 
@@ -349,14 +364,18 @@ final class ClientTest extends TestCase
 
     public function testClientWithRetriesRetryAfterHeaderServerError(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080/',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
         $client->enableRetryAttempts();
         $client->setMaxRetryAttempts(1);
 
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], ]);
 
         $this->expectException(ServerException::class);
-        $response = $client->send('GET', '/500');
+        $response = $client->get('/500');
 
         self::assertSame(500, $response->getStatusCode());
 
@@ -367,7 +386,13 @@ final class ClientTest extends TestCase
 
     public function testDisableRetryAttempts(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
         $client->disableRetryAttempts();
 
         $reflectionClass = new ReflectionClass($client::class);
@@ -377,7 +402,13 @@ final class ClientTest extends TestCase
 
     public function testEnableRetryAttempts(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
         $client->enableRetryAttempts();
 
         $reflectionClass = new ReflectionClass($client::class);
@@ -385,13 +416,48 @@ final class ClientTest extends TestCase
         self::assertTrue($attemptRetry);
     }
 
+    /**
+     * @param array{
+     *     code: int,
+     *     hasKey: string,
+     *     expectedArgs: array{apiKey: array<string>, foo: array<string>}
+     * } $options
+     */
+    #[DataProvider('methodRequestProvider')]
+    public function testMethodSendsRequest(string $method, string $endpoint, array $options): void
+    {
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
+
+        $client->build(['persistentHeaders' => ['Accept' => 'application/json']]);
+
+        $response = [$client, $method]($endpoint, ['query' => ['foo' => 'bar']]);
+
+        self::assertSame($options['code'], $response->getStatusCode());
+
+        /** @var array{args: array{apiKey: array<string>, foo: array<string>}} $data */
+        $data = json_decode($response->getBody()->getContents(), true);
+        self::assertSame($options['expectedArgs'], $data['args']);
+    }
+
     public function testParseWithJsonTraitRaw(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
         $client->build([
             'persistentHeaders' => ['Accept' => 'application/json'],
         ]);
-        $response = $client->send('GET', '/get', ['query' => ['foo' => 'bar']]);
+        $response = $client->get('/get', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertInstanceOf(Response::class, $response);
@@ -400,11 +466,17 @@ final class ClientTest extends TestCase
 
     public function testParseWithJsonTraitToArray(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
         $client->build([
             'persistentHeaders' => ['Accept' => 'application/json'],
         ]);
-        $response = $client->send('GET', '/get/full', ['query' => ['foo' => 'bar']]);
+        $response = $client->get('/get/full', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertInstanceOf(Response::class, $response);
@@ -418,11 +490,17 @@ final class ClientTest extends TestCase
 
     public function testParseWithJsonTraitToObject(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
         $client->build([
             'persistentHeaders' => ['Accept' => 'application/json'],
         ]);
-        $response = $client->send('GET', '/get/full', ['query' => ['foo' => 'bar']]);
+        $response = $client->get('/get/full', ['query' => ['foo' => 'bar']]);
 
         self::assertSame(200, $response->getStatusCode());
         self::assertInstanceOf(Response::class, $response);
@@ -436,16 +514,26 @@ final class ClientTest extends TestCase
 
     public function testRateLimitExceeded(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir());
+        $client = $this->buildTestClient([
+            'apiUrl'    => 'http://localhost:8080/',
+            'apiKey'    => 'test',
+            'cachePath' => sys_get_temp_dir(),
+        ]);
         $client->build(['persistentHeaders' => ['Accept' => 'application/json'], 'timeout' => '5.0']);
 
         $this->expectException(RateLimitExceededException::class);
-        $client->send('GET', '/429');
+        $client->get('/429');
     }
 
     public function testSetMaxRetryAttempts(): void
     {
-        $client = $this->buildTestClient('http://localhost:8080/', 'test', sys_get_temp_dir(), true, 'api_key');
+        $client = $this->buildTestClient([
+            'apiUrl'           => 'http://localhost:8080/',
+            'apiKey'           => 'test',
+            'cachePath'        => sys_get_temp_dir(),
+            'apiParamName'     => 'api_key',
+            'apiRequiresQuery' => true,
+        ]);
         $client->setMaxRetryAttempts(10);
 
         $reflectionClass = new ReflectionClass($client::class);
@@ -453,11 +541,19 @@ final class ClientTest extends TestCase
         self::assertSame(10, $maxRetries);
     }
 
-    private function buildTestClient(null|bool|string ...$params): Client
+    public static function methodRequestProvider(): Generator
     {
-        static $called;
+        yield ['delete', '/delete', ['code' => 200, 'expectedArgs' => ['api_key' => ['test'], 'foo' => ['bar']]]];
+        yield ['post', '/post', ['code' => 200, 'expectedArgs' => ['api_key' => ['test'], 'foo' => ['bar']]]];
+        yield ['put', '/put', ['code' => 200, 'expectedArgs' => ['api_key' => ['test'], 'foo' => ['bar']]]];
 
-        // @phpstan-ignore-next-line
-        return $called[serialize($params)] ??= new Client(...$params);
+    }
+
+    /**
+     * @param ClientOptionsArray $params
+     */
+    private function buildTestClient(array $params): Client
+    {
+        return new Client($params);
     }
 }
