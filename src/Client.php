@@ -349,7 +349,17 @@ final class Client
 
         if ($this->apiRequiresQuery) {
             if (isset($options['query'])) {
-                $options['query'] += [$this->apiParamName => $this->apiKey];
+                /**
+                 * @var array<mixed> $tempQuery
+                 */
+                $tempQuery = $options['query'];
+                $tempQuery = array_merge(
+                    $tempQuery,
+                    [$this->apiParamName => $this->apiKey]
+                );
+                $options['query'] = $tempQuery;
+
+                unset($tempQuery);
             } else {
                 $options['query'] = [$this->apiParamName => $this->apiKey];
             }
