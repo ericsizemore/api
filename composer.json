@@ -41,15 +41,17 @@
         "php": "^8.2 <8.5",
         "guzzlehttp/guzzle": "^7.0",
         "kevinrob/guzzle-cache-middleware": "^5.1",
-        "symfony/cache": "^7.0"
+        "symfony/cache": "^7.1"
     },
     "require-dev": {
         "esi/phpunit-coverage-check": "^2.0",
-        "friendsofphp/php-cs-fixer": "^3.57",
-        "phpstan/phpstan": "^1.11",
+        "friendsofphp/php-cs-fixer": "^3.64",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^1.12",
+        "phpstan/phpstan-deprecation-rules": "^1.2",
         "phpstan/phpstan-phpunit": "^1.4",
         "phpstan/phpstan-strict-rules": "^1.6",
-        "phpunit/phpunit": "^11.1"
+        "phpunit/phpunit": "^11.4"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -63,6 +65,11 @@
             "Esi\\Api\\Tests\\": "tests/src/"
         }
     },
+    "config": {
+        "allow-plugins": {
+            "phpstan/extension-installer": true
+        }
+    },
     "extra": {
         "branch-alias": {
             "dev-main": "1.0-dev"
@@ -70,8 +77,8 @@
     },
     "scripts": {
         "coverage-check": "vendor/bin/coverage-check build/logs/clover.xml 100",
-        "cs:fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
         "cs:check": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff",
+        "cs:fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
         "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon",
         "test": "phpunit"
     }

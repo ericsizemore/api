@@ -44,7 +44,6 @@ use function is_dir;
 use function is_numeric;
 use function is_writable;
 use function range;
-use function sprintf;
 use function strtoupper;
 use function time;
 use function trim;
@@ -369,7 +368,7 @@ final class Client
 
         // Do we have Guzzle instantiated already?
         if (!$this->client instanceof GuzzleClient) {
-            throw new RuntimeException(sprintf(
+            throw new RuntimeException(\sprintf(
                 'No valid Guzzle client detected, a client must be built with the "%s" method of "%s" first.',
                 'build',
                 Client::class

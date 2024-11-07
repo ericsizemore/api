@@ -19,7 +19,6 @@ use InvalidArgumentException;
 use function array_filter;
 use function implode;
 use function ltrim;
-use function sprintf;
 use function str_ends_with;
 
 use const ARRAY_FILTER_USE_BOTH;
@@ -47,7 +46,7 @@ class Utils
 
         // Check for a valid method
         if (!\in_array($method, $availableMethods, true)) {
-            throw new InvalidArgumentException(sprintf(
+            throw new InvalidArgumentException(\sprintf(
                 'Invalid request method specified, must be one of %s.',
                 implode(', ', $availableMethods)
             ));
@@ -111,7 +110,7 @@ class Utils
         }, ARRAY_FILTER_USE_BOTH);
 
         if ($invalidOptions !== []) {
-            throw new InvalidArgumentException(sprintf('Invalid option(s) specified: %s', implode(', ', $invalidOptions)));
+            throw new InvalidArgumentException(\sprintf('Invalid option(s) specified: %s', implode(', ', $invalidOptions)));
         }
     }
 }
