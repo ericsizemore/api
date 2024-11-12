@@ -42,6 +42,9 @@ class Utils
     {
         static $availableMethods;
 
+        /**
+         * @var null|string[] $availableMethods
+         */
         $availableMethods ??= ['HEAD', 'GET', 'DELETE', 'OPTIONS', 'PATCH', 'POST', 'PUT', ];
 
         // Check for a valid method
@@ -62,6 +65,9 @@ class Utils
     {
         static $validOptions;
 
+        /**
+         * @var null|string[] $validOptions
+         */
         $validOptions ??= [
             'allow_redirects',
             'auth',
