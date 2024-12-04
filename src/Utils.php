@@ -23,8 +23,6 @@ use function str_ends_with;
 
 use const ARRAY_FILTER_USE_BOTH;
 
-/**
- */
 class Utils
 {
     public static function normalizeEndpoint(?string $endpoint, string $apiUrl): string

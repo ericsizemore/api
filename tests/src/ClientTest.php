@@ -201,7 +201,6 @@ final class ClientTest extends TestCase
                 'Accept'        => 'application/json',
                 'Client-ID'     => 'apiKey',
                 'Authorization' => 'someAccessToken',
-
             ]]);
 
         $response = $client->send('GET', '/anything');
@@ -230,7 +229,6 @@ final class ClientTest extends TestCase
                 'Accept'        => 'application/json',
                 'Client-ID'     => 'apiKey',
                 'Authorization' => 'someAccessToken',
-
             ]]);
 
         $response = $client->send('GET', '/anything/query1', ['query' => ['foo' => 'bar']]);
@@ -253,13 +251,11 @@ final class ClientTest extends TestCase
         self::assertArrayHasKey('args', $data); // @phpstan-ignore-line
         self::assertSame(['foo' => ['bar']], $data['args']);
 
-        //
         $client->build([
             'persistentHeaders' => [
                 'Accept'        => 'application/json',
                 'Client-ID'     => 'anotherApiKey',
                 'Authorization' => 'someOtherAccessToken',
-
             ]]);
 
         $response = $client->send('GET', '/anything/query2', ['query' => ['foo' => 'bar']]);

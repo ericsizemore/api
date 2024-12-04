@@ -19,7 +19,4 @@ use InvalidArgumentException;
 /**
  * RateLimitExceededException.
  */
-final class RateLimitExceededException extends InvalidArgumentException
-{
-    //
-}
+final class RateLimitExceededException extends InvalidArgumentException {}
