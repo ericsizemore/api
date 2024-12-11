@@ -252,7 +252,7 @@ final class Client
 
         $defaultOptions += ['handler' => $handlerStack, ];
 
-        // Attempt instantiating the client. Generally we should only run into issues if any options
+        // Attempt instantiation of the client. Generally we should only run into issues if any options
         // passed to Guzzle are incorrectly defined/configured.
         $this->client = new GuzzleClient($defaultOptions);
 

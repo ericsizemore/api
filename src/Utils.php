@@ -23,14 +23,54 @@ use function str_ends_with;
 
 use const ARRAY_FILTER_USE_BOTH;
 
-class Utils
+abstract class Utils
 {
+    /**
+     * @var string[]
+     */
+    public const AvailableMethods = ['HEAD', 'GET', 'DELETE', 'OPTIONS', 'PATCH', 'POST', 'PUT', ];
+
+    /**
+     * @var string[]
+     */
+    public const ValidGuzzleOptions = [
+        'allow_redirects',
+        'auth',
+        'body',
+        'cert',
+        'cookies',
+        'connect_timeout',
+        'debug',
+        'decode_content',
+        'delay',
+        'expect',
+        'force_ip_resolve',
+        'form_params',
+        'headers',
+        'idn_conversion',
+        'json',
+        'multipart',
+        'on_headers',
+        'on_stats',
+        'progress',
+        'proxy',
+        'query',
+        'read_timeout',
+        'sink',
+        'ssl_key',
+        'stream',
+        'synchronous',
+        'verify',
+        'timeout',
+        'version',
+    ];
+
     public static function normalizeEndpoint(?string $endpoint, string $apiUrl): string
     {
         $endpoint = ltrim((string) $endpoint, '/');
 
         if (!str_ends_with($apiUrl, '/')) {
-            $endpoint = '/' . $endpoint;
+            $endpoint = \sprintf('/%s', $endpoint);
         }
 
         return $endpoint;
@@ -38,73 +78,29 @@ class Utils
 
     public static function verifyMethod(string $method): void
     {
-        static $availableMethods;
-
-        /**
-         * @var null|string[] $availableMethods
-         */
-        $availableMethods ??= ['HEAD', 'GET', 'DELETE', 'OPTIONS', 'PATCH', 'POST', 'PUT', ];
-
         // Check for a valid method
-        if (!\in_array($method, $availableMethods, true)) {
+        if (!\in_array($method, self::AvailableMethods, true)) {
             throw new InvalidArgumentException(\sprintf(
                 'Invalid request method specified, must be one of %s.',
-                implode(', ', $availableMethods)
+                implode(', ', self::AvailableMethods)
             ));
         }
     }
 
     /**
-     * Performs a very bare-bones 'verification' of Guzzle options.
+     * Performs a rather bare-bones 'verification' of Guzzle options.
      *
      * @param array<string, mixed> $options
      */
     public static function verifyOptions(array $options): void
     {
-        static $validOptions;
-
-        /**
-         * @var null|string[] $validOptions
-         */
-        $validOptions ??= [
-            'allow_redirects',
-            'auth',
-            'body',
-            'cert',
-            'cookies',
-            'connect_timeout',
-            'debug',
-            'decode_content',
-            'delay',
-            'expect',
-            'force_ip_resolve',
-            'form_params',
-            'headers',
-            'idn_conversion',
-            'json',
-            'multipart',
-            'on_headers',
-            'on_stats',
-            'progress',
-            'proxy',
-            'query',
-            'read_timeout',
-            'sink',
-            'ssl_key',
-            'stream',
-            'synchronous',
-            'verify',
-            'timeout',
-            'version',
-        ];
-
         // Remove options not recognized by Guzzle, or ones we want to keep as default.
         unset($options['persistentHeaders'], $options['http_errors']);
 
         $invalidOptions = [];
 
-        array_filter($options, static function ($value, int|string $key) use (&$invalidOptions, $validOptions): bool {
-            if (!\in_array($key, $validOptions, true)) {
+        array_filter($options, static function ($value, int|string $key) use (&$invalidOptions): bool {
+            if (!\in_array($key, self::ValidGuzzleOptions, true)) {
                 $invalidOptions[] = $key;
 
                 return true;

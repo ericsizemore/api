@@ -31,8 +31,6 @@ trait ParseJsonResponse
 {
     /**
      * Returns the jSON data as-is from the API.
-     *
-     * @param ResponseInterface $response The response object.
      */
     public function raw(ResponseInterface $response): string
     {
@@ -42,16 +40,19 @@ trait ParseJsonResponse
     /**
      * Decodes the jSON returned from the API. Returns as an associative array.
      *
-     * @param ResponseInterface $response The response object.
-     *
      * @throws JsonException
      *
      * @return array<mixed>
      */
     public function toArray(ResponseInterface $response): array
     {
-        /** @var array<mixed> $json * */
         $json = json_decode($this->raw($response), true, flags: JSON_THROW_ON_ERROR);
+
+        //@codeCoverageIgnoreStart
+        if (!\is_array($json)) {
+            throw new JsonException();
+        }
+        //@codeCoverageIgnoreEnd
 
         return $json;
     }
@@ -59,14 +60,17 @@ trait ParseJsonResponse
     /**
      * Decodes the jSON returned from the API. Returns as an array of objects.
      *
-     * @param ResponseInterface $response The response object.
-     *
      * @throws JsonException
      */
     public function toObject(ResponseInterface $response): stdClass
     {
-        /** @var stdClass $json * */
         $json = json_decode($this->raw($response), false, flags: JSON_THROW_ON_ERROR);
+
+        //@codeCoverageIgnoreStart
+        if (!$json instanceof stdClass) {
+            throw new JsonException();
+        }
+        //@codeCoverageIgnoreEnd
 
         return $json;
     }
