@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "705286d348a2281abf3a2a54f11cf4f9",
+    "content-hash": "1322906e6f4ad06246015424f6267813",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -1466,23 +1466,23 @@
         },
         {
             "name": "esi/phpunit-coverage-check",
-            "version": "2.0.2",
+            "version": "3.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ericsizemore/phpunit-coverage-check.git",
-                "reference": "0428086b845733eb9d853464911923f78aa6b571"
+                "reference": "e44da5caad287bac2a866a2624161a3f9ffd7f04"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ericsizemore/phpunit-coverage-check/zipball/0428086b845733eb9d853464911923f78aa6b571",
-                "reference": "0428086b845733eb9d853464911923f78aa6b571",
+                "url": "https://api.github.com/repos/ericsizemore/phpunit-coverage-check/zipball/e44da5caad287bac2a866a2624161a3f9ffd7f04",
+                "reference": "e44da5caad287bac2a866a2624161a3f9ffd7f04",
                 "shasum": ""
             },
             "require": {
                 "ext-libxml": "*",
                 "ext-simplexml": "*",
-                "php": "^8.2 <8.5",
-                "symfony/console": "^7.1"
+                "php": "^8.3",
+                "symfony/console": "^7.2"
             },
             "require-dev": {
                 "friendsofphp/php-cs-fixer": "^3.65",
@@ -1491,15 +1491,19 @@
                 "phpstan/phpstan-deprecation-rules": "^2.0",
                 "phpstan/phpstan-phpunit": "^2.0",
                 "phpstan/phpstan-strict-rules": "^2.0",
-                "phpunit/phpunit": "^11.4"
+                "phpunit/phpunit": "^12.0",
+                "psalm/plugin-phpunit": "^0.19.0",
+                "psalm/plugin-symfony": "5.x-dev",
+                "rector/rector": "^2.0",
+                "vimeo/psalm": "dev-master as 5.26.1"
             },
             "bin": [
-                "coverage-check"
+                "bin/coverage-check"
             ],
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.x-dev"
+                    "dev-master": "3.x-dev"
                 }
             },
             "autoload": {
@@ -1558,7 +1562,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-12-03T04:33:39+00:00"
+            "time": "2024-12-16T07:57:33+00:00"
         },
         {
             "name": "evenement/evenement",
