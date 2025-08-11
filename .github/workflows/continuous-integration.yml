@@ -24,7 +24,7 @@ jobs:
       matrix:
         php: [ '8.2', '8.3', '8.4' ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: "Install PHP ${{ matrix.php }}"
         uses: shivammathur/setup-php@master
@@ -51,7 +51,7 @@ jobs:
       matrix:
         php: [ '8.2', '8.3', '8.4' ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
            fetch-depth: 10
 
