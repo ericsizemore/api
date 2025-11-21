@@ -38,7 +38,7 @@
         }
     ],
     "require": {
-        "php": "^8.2 <8.5",
+        "php": "<8.6",
         "guzzlehttp/guzzle": "^7.9",
         "kevinrob/guzzle-cache-middleware": "^7.0",
         "symfony/cache": "^7.1"
