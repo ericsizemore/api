@@ -38,20 +38,21 @@
         }
     ],
     "require": {
-        "php": "^8.2 <8.5",
-        "guzzlehttp/guzzle": "^7.9",
+        "php": "^8.2 <8.6",
+        "guzzlehttp/guzzle": "^7.10",
         "kevinrob/guzzle-cache-middleware": "^7.0",
-        "symfony/cache": "^7.1"
+        "symfony/cache": "^7.4"
     },
     "require-dev": {
         "esi/phpunit-coverage-check": "^2.0",
-        "friendsofphp/php-cs-fixer": "^3.65",
+        "friendsofphp/php-cs-fixer": "^3.93",
         "phpstan/extension-installer": "^1.4",
-        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^11.5"
+        "phpunit/phpunit": "^11.5",
+        "rector/rector": "^2.3"
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
@@ -76,10 +77,14 @@
         }
     },
     "scripts": {
-        "coverage-check": "vendor/bin/coverage-check build/logs/clover.xml 100",
-        "cs:check": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff",
-        "cs:fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
-        "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon",
-        "test": "phpunit"
+        "clear-build": "rm -rf ./build/*",
+        "code-coverage": "vendor/bin/coverage-check build/logs/clover.xml 100",
+        "phpcs:check": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff",
+        "phpcs:fix": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
+        "phpstan": "vendor/bin/phpstan analyse -c phpstan.neon -vvv",
+        "phpunit": "vendor/bin/phpunit",
+        "phpunit:migrate": "@phpunit --migrate-configuration",
+        "refactor:check": "@refactor:fix --dry-run",
+        "refactor:fix": "vendor/bin/rector process"
     }
 }

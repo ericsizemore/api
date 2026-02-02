@@ -1,13 +1,3 @@
-.idea/
-.php-cs-fixer.cache
-vendor/
-build/
-dochtml/
-composer.phar
-*.iws
-out/
-.idea_modules/
-atlassian-ide-plugin.xml
-.idea/php.xml
-.idea/api.iml
-clover.xml
+/build/
+/vendor/
+*.cache

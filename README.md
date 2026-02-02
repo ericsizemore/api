@@ -9,12 +9,22 @@ Esi\Api - A simple wrapper/builder using Guzzle for base API clients.
 [![Downloads per Month](https://img.shields.io/packagist/dm/esi/api.svg)](https://packagist.org/packages/esi/api)
 [![License](https://img.shields.io/packagist/l/esi/api.svg)](https://packagist.org/packages/esi/api)
 
+`esi/api` is a simple wrapper/builder using Guzzle for base API clients.
 
-## About
 
-Documentation will be a bit lackluster, and the unit tests need a lot of work. With that being said, I created this library more for use in my own projects that center around an API service; to decouple a lot of the logic that would be repeated in each API service library, to its own library.
+> [!NOTE]
+> Documentation will be a bit lackluster, and the unit tests need a lot of work. With that being said, I created this 
+> library more for use in my own projects that center around an API service; to decouple a lot of the logic that would 
+> be repeated in each API service library, to its own library.
+> It has a long way to go, but it should be relatively stable.
 
-It has a long way to go, but it should be relatively stable.
+## Installation
+
+You can install the package via composer:
+
+``` bash
+$ composer require ericsizemore/api
+```
 
 ## Features
 
@@ -29,7 +39,7 @@ It has a long way to go, but it should be relatively stable.
 
 It currently does not support async requests and pooling. Just your regular, good 'ol, standard requests.
 
-## Example
+## Usage
 ```php
 use Esi\Api\Client;
 
@@ -64,23 +74,33 @@ $data = $client->raw(); // or $response->getBody()->getContents()
 
 - PHP 8.2.0 or above.
 
-### Submitting bugs and feature requests
+### Credits
 
-Bugs and feature requests are tracked on [GitHub](https://github.com/ericsizemore/api/issues)
-
-Issues are the quickest way to report a bug. If you find a bug or documentation error, please check the following first:
-
-* That there is not an Issue already open concerning the bug
-* That the issue has not already been addressed (within closed Issues, for example)
+- [Eric Sizemore](https://github.com/ericsizemore)
+- [All Contributors](https://github.com/ericsizemore/api/contributors)
 
 ### Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md).
 
-### Author
+Bugs and feature requests are tracked on [GitHub](https://github.com/ericsizemore/api/issues).
 
-Eric Sizemore - <admin@secondversion.com> - <https://www.secondversion.com>
+### Contributor Covenant Code of Conduct
+
+See [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)
+
+### Backward Compatibility Promise
+
+See [backward-compatibility.md](./backward-compatibility.md) for more information on Backwards Compatibility.
+
+### Changelog
+
+See the [CHANGELOG](./CHANGELOG.md) for more information on what has changed recently.
 
 ### License
 
-Esi\Api is licensed under the MIT License - see the `LICENSE.md` file for details
+See the [LICENSE](./LICENSE.md) for more information on the license that applies to this project.
+
+### Security
+
+See [SECURITY](./SECURITY.md) for more information on the security disclosure process.

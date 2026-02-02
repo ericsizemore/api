@@ -8,11 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+  * Added new dev dependencies.
+
 ### Changed
 
   * `Utils` class made abstract, as it shouldn't be instantiated anyway.
   * Added new constants to `Utils` to replace static variables within the utility functions.
-  * 
+  * Updated CI to test against PHP 8.5.
+  * Minimum version for `symfony/cache` bumped to 7.4.
+  * The scripts within `composer.json` have been updated/changed.
+  * Updated `backward-compatibility.md`.
+  * Updated security policy (`SECURITY.md`).
+  * Updated `README.md`
+
 
 ## [1.1.0] - 2024-05-22
 
