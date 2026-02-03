@@ -41,7 +41,7 @@
         "php": "^8.2 <8.6",
         "guzzlehttp/guzzle": "^7.10",
         "kevinrob/guzzle-cache-middleware": "^7.0",
-        "symfony/cache": "^7.4"
+        "symfony/cache": "^8.0"
     },
     "require-dev": {
         "esi/phpunit-coverage-check": "^2.0",
