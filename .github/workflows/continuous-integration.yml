@@ -40,6 +40,7 @@ jobs:
         with:
            composer-options: "--prefer-dist --optimize-autoloader"
            require-lock-file: "false"
+           dependency-versions: "highest"
 
       - name: "Run PHPStan"
         run: composer run-script phpstan
@@ -59,8 +60,8 @@ jobs:
         uses: shivammathur/setup-php@master
         with:
            php-version: ${{ matrix.php }}
-           extensions: mbstring, 
-           coverage: xdebug,
+           extensions: mbstring
+           coverage: xdebug
 
       - name: "Validate composer.json and composer.lock"
         run: composer validate --strict
@@ -70,6 +71,7 @@ jobs:
         with:
            composer-options: "--prefer-dist --optimize-autoloader"
            require-lock-file: "false"
+           dependency-versions: "highest"
 
       - name: "Install Node.js"
         uses: actions/setup-node@v6
