@@ -39,7 +39,7 @@ jobs:
         uses: ramsey/composer-install@v3
         with:
            composer-options: "--prefer-dist --optimize-autoloader"
-           require-lock-file: "true"
+           require-lock-file: "false"
 
       - name: "Run PHPStan"
         run: composer run-script phpstan
@@ -69,7 +69,7 @@ jobs:
         uses: ramsey/composer-install@v3
         with:
            composer-options: "--prefer-dist --optimize-autoloader"
-           require-lock-file: "true"
+           require-lock-file: "false"
 
       - name: "Install Node.js"
         uses: actions/setup-node@v6
