@@ -438,7 +438,7 @@ final class Client
     {
         return static function (int $numberOfRetries, ResponseInterface $response): int {
             if (!$response->hasHeader('Retry-After')) {
-                return RetryMiddleware::exponentialDelay($numberOfRetries);
+                 return (int) 2 ** ($numberOfRetries - 1) * 1_000;
             }
 
             $retryAfter = $response->getHeaderLine('Retry-After');
@@ -449,7 +449,7 @@ final class Client
             }
 
             // @codeCoverageIgnoreEnd
-            return 1000 * (int) $retryAfter;
+            return 1_000 * (int) $retryAfter;
         };
     }
 }
