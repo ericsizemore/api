@@ -40,7 +40,7 @@
     "require": {
         "php": "^8.2 <8.6",
         "guzzlehttp/guzzle": "^7.10",
-        "kevinrob/guzzle-cache-middleware": "^7.0",
+        "kevinrob/guzzle-cache-middleware": "^8.0",
         "symfony/cache": "^7.4"
     },
     "require-dev": {
