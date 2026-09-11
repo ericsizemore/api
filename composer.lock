@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7461090a1b86b99d73a312d880fb675f",
+    "content-hash": "62ec2345d5f0e114cadf1ab85ec7ca00",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -339,32 +339,34 @@
         },
         {
             "name": "kevinrob/guzzle-cache-middleware",
-            "version": "7.0.0",
+            "version": "8.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Kevinrob/guzzle-cache-middleware.git",
-                "reference": "3d63aaf136c5a52ce751a63c2169b3a49b26841f"
+                "reference": "9c05662892a53f646f4cc50e6dbe28730ff32b5c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Kevinrob/guzzle-cache-middleware/zipball/3d63aaf136c5a52ce751a63c2169b3a49b26841f",
-                "reference": "3d63aaf136c5a52ce751a63c2169b3a49b26841f",
+                "url": "https://api.github.com/repos/Kevinrob/guzzle-cache-middleware/zipball/9c05662892a53f646f4cc50e6dbe28730ff32b5c",
+                "reference": "9c05662892a53f646f4cc50e6dbe28730ff32b5c",
                 "shasum": ""
             },
             "require": {
-                "guzzlehttp/guzzle": "^7.9.2",
-                "guzzlehttp/promises": "^2.0.3",
-                "guzzlehttp/psr7": "^2.7.0",
-                "php": ">=8.1"
+                "guzzlehttp/guzzle": "^7.9.2 || ^8.0",
+                "guzzlehttp/promises": "^2.0.3 || ^3.0",
+                "guzzlehttp/psr7": "^2.7.0 || ^3.0",
+                "php": ">=8.2",
+                "psr/clock": "^1.0 || ^2.0 || ^3.0"
             },
             "require-dev": {
-                "cache/array-adapter": "^0.4 || ^0.5 || ^1.0",
-                "cache/simple-cache-bridge": "^0.1 || ^1.0",
-                "illuminate/cache": "^5.0",
+                "cache/array-adapter": "^1.0",
+                "cache/simple-cache-bridge": "^1.1",
+                "illuminate/cache": "^10.0 || ^11.0 || ^12.0 || ^13.0",
                 "league/flysystem": "^3.16",
                 "phpunit/phpunit": "^9.6.21",
-                "psr/cache": "^1.0",
-                "symfony/cache": "^4.4 || ^5.0",
+                "psr/cache": "^1.0 || ^2.0 || ^3.0",
+                "symfony/cache": "^6.4 || ^7.0 || ^8.0",
+                "symfony/clock": "^6.4 || ^7.0 || ^8.0",
                 "symfony/phpunit-bridge": "^7.1.4"
             },
             "suggest": {
@@ -415,9 +417,9 @@
             ],
             "support": {
                 "issues": "https://github.com/Kevinrob/guzzle-cache-middleware/issues",
-                "source": "https://github.com/Kevinrob/guzzle-cache-middleware/tree/7.0.0"
+                "source": "https://github.com/Kevinrob/guzzle-cache-middleware/tree/8.0.0"
             },
-            "time": "2025-09-04T18:27:50+00:00"
+            "time": "2026-07-29T13:17:39+00:00"
         },
         {
             "name": "psr/cache",
@@ -467,6 +469,54 @@
                 "source": "https://github.com/php-fig/cache/tree/3.0.0"
             },
             "time": "2021-02-03T23:26:27+00:00"
+        },
+        {
+            "name": "psr/clock",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/clock.git",
+                "reference": "e41a24703d4560fd0acb709162f73b8adfc3aa0d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/clock/zipball/e41a24703d4560fd0acb709162f73b8adfc3aa0d",
+                "reference": "e41a24703d4560fd0acb709162f73b8adfc3aa0d",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.0 || ^8.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Clock\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "https://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for reading the clock.",
+            "homepage": "https://github.com/php-fig/clock",
+            "keywords": [
+                "clock",
+                "now",
+                "psr",
+                "psr-20",
+                "time"
+            ],
+            "support": {
+                "issues": "https://github.com/php-fig/clock/issues",
+                "source": "https://github.com/php-fig/clock/tree/1.0.0"
+            },
+            "time": "2022-11-25T14:36:26+00:00"
         },
         {
             "name": "psr/container",
