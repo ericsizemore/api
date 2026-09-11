@@ -38,20 +38,20 @@
         }
     ],
     "require": {
-        "php": "^8.2 <8.6",
-        "guzzlehttp/guzzle": "^7.10",
+        "php": "^8.2",
+        "guzzlehttp/guzzle": "^7.15",
         "kevinrob/guzzle-cache-middleware": "^7.0",
-        "symfony/cache": "^7.4"
+        "symfony/cache": "^7.4 || ^8.0"
     },
     "require-dev": {
-        "esi/phpunit-coverage-check": "^2.0",
-        "friendsofphp/php-cs-fixer": "^3.93",
+        "esi/phpunit-coverage-check": "^2.0 || ^3.1",
+        "friendsofphp/php-cs-fixer": "^3.95",
         "phpstan/extension-installer": "^1.4",
-        "phpstan/phpstan": "^2.1",
+        "phpstan/phpstan": "^2.2",
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^11.5",
+        "phpunit/phpunit": "^11.5 || ^12.5 || ^13.3",
         "rector/rector": "^2.3"
     },
     "minimum-stability": "dev",

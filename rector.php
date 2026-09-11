@@ -39,18 +39,11 @@ return RectorConfig::configure()
         naming: true,
         instanceOf: true,
         earlyReturn: true,
-        strictBooleans: true,
-        carbon: false,
         rectorPreset: true,
         phpunitCodeQuality: true,
-        doctrineCodeQuality: false,
-        symfonyCodeQuality: false,
-        symfonyConfigs: false,
     )
     ->withRootFiles()
     ->withSets([
-        PHPUnitSetList::PHPUNIT_100,
-        PHPUnitSetList::PHPUNIT_110,
         PHPUnitSetList::PHPUNIT_CODE_QUALITY,
         PHPUnitSetList::ANNOTATIONS_TO_ATTRIBUTES,
     ])
